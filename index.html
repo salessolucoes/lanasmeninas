@@ -5,9 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lá Nas Meninas | Cardápio</title>
 <meta name="description" content="Combos de cachorro-quente e mistoburguer da Lá Nas Meninas, em Paracuru. Faça seu pedido online.">
-<meta property="og:title" content="Lá Nas Meninas | Cardápio">
-<meta property="og:description" content="Peça seu lanche diferenciado! Combos com refri grátis.">
-<meta property="og:image" content="img/og.jpg">
+<!-- Prévia ao compartilhar o link (WhatsApp, Instagram, Facebook) — o link da imagem precisa ser completo -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lá Nas Meninas">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:url" content="https://salessolucoes.github.io/lanasmeninas/">
+<meta property="og:title" content="Lá Nas Meninas | Cardápio Digital 🍔🌭">
+<meta property="og:description" content="Peça seu lanche diferenciado! Combos, sandubas, pão árabe e cachorro-quente. Entrega e retirada em Paracuru.">
+<meta property="og:image" content="https://salessolucoes.github.io/lanasmeninas/img/og.jpg?v=2">
+<meta property="og:image:secure_url" content="https://salessolucoes.github.io/lanasmeninas/img/og.jpg?v=2">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Lá Nas Meninas — cardápio digital">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://salessolucoes.github.io/lanasmeninas/img/og.jpg?v=2">
 <meta name="theme-color" content="#120a10">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="img/icone-192.png">
@@ -281,6 +293,77 @@ label.campo{display:block;margin-top:12px;font-size:12.5px;font-weight:700;color
 .carregando{padding:60px 0;text-align:center;color:var(--suave)}
 .revela{opacity:0;transform:translateY(14px);transition:opacity .5s var(--ease),transform .5s var(--ease)}
 .revela.on{opacity:1;transform:none}
+
+/* =====================================================================
+   v2 — ESTILO APP DE DELIVERY
+   ===================================================================== */
+body{background-image:none}
+.hero{padding:0;text-align:left;overflow:visible}
+.hero::before{display:none}
+.hero-in{max-width:1100px;padding:14px 18px 0}
+.topo-app{display:flex;align-items:center;gap:12px}
+.logo-wrap{width:58px;height:58px;margin:0;padding:2px;flex:none;box-shadow:0 0 0 4px rgba(255,45,138,.1),0 10px 30px var(--rosa-glow)}
+.topo-txt{flex:1;min-width:0}
+.marca{margin:0;font-size:27px;line-height:1.15;text-shadow:0 0 18px rgba(255,45,138,.45)}
+.hero-sub{margin-top:1px;font-size:10.5px;letter-spacing:1.8px}
+.hero-topo{margin:0}
+.status{padding:6px 10px;font-size:11px}
+.status span{white-space:nowrap}
+.topo-ig{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:14px;background:var(--noite-2);border:1px solid var(--borda);color:var(--texto)}
+.topo-ig svg{width:20px;height:20px}
+.linha-status{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.chips{display:none}
+
+/* modo do pedido: delivery / retirar / comer aqui */
+.modos{position:relative;display:grid;grid-template-columns:repeat(3,1fr);margin-top:14px;padding:5px;border-radius:18px;background:var(--noite-2);border:1px solid var(--borda)}
+.modos button{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px;border-radius:14px;font-weight:800;font-size:13px;color:var(--suave);transition:color .25s}
+.modos button small{font-size:10.5px;font-weight:600;opacity:.8}
+.modos button[aria-pressed=true]{color:#fff}
+.modos .pilula{position:absolute;z-index:0;top:5px;bottom:5px;left:5px;width:calc((100% - 10px)/3);border-radius:14px;background:linear-gradient(135deg,var(--rosa),var(--rosa-2));box-shadow:0 8px 22px var(--rosa-glow);transition:transform .4s var(--ease)}
+.aviso-mesa{margin-top:10px;font-size:13px;font-weight:700;color:#ffd2e6;background:rgba(255,45,138,.12);border:1px solid rgba(255,45,138,.3);padding:9px 12px;border-radius:12px}
+
+/* banners passando */
+.banners{position:relative;margin-top:16px}
+.trilho{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 18px;scrollbar-width:none;scroll-behavior:smooth}
+.trilho::-webkit-scrollbar{display:none}
+.banner{position:relative;flex:0 0 64%;max-width:300px;aspect-ratio:4/5;border-radius:26px;overflow:hidden;scroll-snap-align:center;background:#000;border:1px solid var(--borda);padding:0}
+.banner .fundo{position:absolute;inset:-20px;width:calc(100% + 40px);height:calc(100% + 40px);object-fit:cover;filter:blur(18px) brightness(.55);transform:scale(1.1)}
+.banner .arte{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.banner .pedir{position:absolute;right:12px;bottom:12px;z-index:2;display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:13px;color:#fff;background:var(--rosa);padding:10px 14px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.pontos{display:flex;justify-content:center;gap:6px;margin-top:12px}
+.pontos i{width:7px;height:7px;border-radius:9px;background:rgba(255,255,255,.22);transition:all .35s var(--ease)}
+.pontos i.on{width:22px;background:var(--rosa)}
+@media(min-width:760px){.banner{flex-basis:280px}}
+.dia{display:none}
+
+/* categorias com ícone */
+.cats a{display:inline-flex;align-items:center;gap:6px}
+.cats a .ic{font-size:16px;line-height:1}
+
+/* grade 2 colunas com foto grande */
+.grade{grid-template-columns:1fr 1fr;gap:12px}
+@media(min-width:700px){.grade{grid-template-columns:repeat(3,1fr);gap:16px}}
+@media(min-width:1040px){.grade{grid-template-columns:repeat(4,1fr)}}
+.item{flex-direction:column;gap:0;padding:0;border-radius:22px;overflow:hidden}
+.item .foto{position:relative;aspect-ratio:1/1;background:#000;overflow:hidden}
+.item .foto .thumb-b{position:absolute;inset:0;border-radius:0;width:100%;height:100%}
+.item .thumb{width:100%;height:100%;border-radius:0}
+.item .foto::after{content:"";position:absolute;inset:auto 0 0;height:40%;background:linear-gradient(transparent,rgba(18,10,16,.65));pointer-events:none}
+.item .selo-i{position:absolute;z-index:2;top:9px;left:9px;font:800 9.5px var(--t-corpo);letter-spacing:.7px;text-transform:uppercase;color:#1a0f00;background:var(--ouro);padding:4px 8px;border-radius:8px}
+.item .acao-f{position:absolute;z-index:3;right:9px;bottom:9px}
+.item .acao-f .btn-add{width:42px;height:42px;border-radius:14px}
+.item .acao-f .qtd{background:rgba(18,10,16,.85);backdrop-filter:blur(8px)}
+.item .acao-f .qtd button{width:32px;height:36px}
+.item .acao-f .sub{display:none}
+.item .acao-f .tag{display:inline-block;background:rgba(18,10,16,.85)}
+.item-c{padding:11px 12px 13px}
+.linha-preco h3{font-size:14.5px;line-height:1.22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.item-base p{font-size:11.5px;-webkit-line-clamp:2;margin-top:3px}
+.item-pe{margin-top:8px}
+.item-preco{font-size:16.5px;color:var(--rosa-3)}
+.item.no-pedido{box-shadow:0 0 0 2px var(--rosa) inset}
+.secao>h2{font-size:22px}
+.secao>h2 .ic{font-size:22px}
 </style>
 </head>
 <body>
@@ -288,17 +371,25 @@ label.campo{display:block;margin-top:12px;font-size:12.5px;font-weight:700;color
 <header class="hero">
   <div class="hero-in">
     <h1 class="sr" id="nomeLoja">Lá Nas Meninas</h1>
-    <div class="hero-topo"><span class="status" id="status"><i></i><span>Carregando…</span></span></div>
-    <div class="logo-wrap"><img class="logo" src="img/logo.png" alt="Lá Nas Meninas" width="360" height="360"></div>
-    <p class="marca">Lá Nas Meninas</p>
-    <p class="hero-sub" id="slogan"></p>
-    <p class="hero-data" id="heroData"></p>
-    <div class="chips">
-      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="2.5"/><circle cx="18.5" cy="17.5" r="2.5"/><path d="M8 17.5h7l-2-6h-4M15 5h2l3.5 12.5M6 11.5h4"/></svg>Entrega e retirada</span>
-      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>09h às 01h55</span>
-      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Paracuru – CE</span>
+    <div class="topo-app">
+      <div class="logo-wrap"><img class="logo" src="img/logo.png" alt="Lá Nas Meninas" width="360" height="360"></div>
+      <div class="topo-txt"><p class="marca">Lá Nas Meninas</p><p class="hero-sub" id="slogan"></p></div>
+      <a class="topo-ig" href="https://instagram.com/lanasmeninas121" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg></a>
     </div>
+    <div class="linha-status"><span class="hero-topo"><span class="status" id="status"><i></i><span>Carregando…</span></span></span><span class="chip">📍 Paracuru – CE</span><span class="chip">🕘 09h às 01h55</span></div>
+    <p class="hero-data" id="heroData"></p>
+
+    <p class="aviso-mesa" id="avisoMesa" hidden></p>
     <div><div class="turnos" id="turnos" role="group" aria-label="Turno do cardápio" hidden></div></div>
+  </div>
+  <div class="banners" aria-label="Promoções">
+    <div class="trilho" id="trilho">
+      <button class="banner" data-banner="5 Hot Dogs + Coca 600ml"><img class="fundo" src="img/banners/banner-5-hotdogs.jpg" alt=""><img class="arte" src="img/banners/banner-5-hotdogs.jpg" alt="Promoção 5 cachorros-quentes + Coca 600ml por R$ 42,99"><span class="pedir">Quero esse +</span></button>
+      <button class="banner" data-banner="4 Mistoburgueres + Coca 600ml"><img class="fundo" src="img/banners/banner-4-mistos.jpg" alt="" loading="lazy"><img class="arte" src="img/banners/banner-4-mistos.jpg" alt="Promoção 4 mistoburgueres + Coca 600ml por R$ 55,99" loading="lazy"><span class="pedir">Quero esse +</span></button>
+      <button class="banner" data-banner="3 Mistoburgueres + Guaraná 200ml"><img class="fundo" src="img/banners/banner-3-mistos.jpg" alt="" loading="lazy"><img class="arte" src="img/banners/banner-3-mistos.jpg" alt="Promoção 3 mistoburgueres + Guaraná por R$ 40,99" loading="lazy"><span class="pedir">Quero esse +</span></button>
+      <button class="banner" data-banner="2 Hot Dogs + 2 Mistoburgueres"><img class="fundo" src="img/banners/banner-2-2.jpg" alt="" loading="lazy"><img class="arte" src="img/banners/banner-2-2.jpg" alt="Promoção 2 cachorros-quentes + 2 mistoburgueres por R$ 42,99" loading="lazy"><span class="pedir">Quero esse +</span></button>
+    </div>
+    <div class="pontos" id="pontos"></div>
   </div>
 </header>
 <section class="dia" aria-labelledby="diaTitulo">
@@ -432,9 +523,9 @@ label.campo{display:block;margin-top:12px;font-size:12.5px;font-weight:700;color
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
-<script src="config.js?v=1"></script>
-<script>if (!/^https?:\/\//.test(APP.API_URL || '')) document.write('<script src="demo.js?v=1"><\/script>');</script>
-<script src="base.js?v=1"></script>
+<script src="config.js?v=3"></script>
+<script>if (!/^https?:\/\//.test(APP.API_URL || '')) document.write('<script src="demo.js?v=3"><\/script>');</script>
+<script src="base.js?v=3"></script>
 <script>
 const { $, $$, brl, esc, norm, digitos, numBR, mascaraTel, ls, rpc, min, hhmm, TURNOS, nomeTurno, turnoAtivo, turnoEm, toast } = B;
 const L = APP.LOJA;
@@ -589,15 +680,17 @@ function categorias() {
   const r = c => ordem.indexOf(c) + 1 || (c === 'Combos' ? 0 : 999);   // combos vêm primeiro se o dono não definiu a ordem
   return cats.sort((a, b) => r(a) - r(b));
 }
+const ICONE = { 'Promoções': '🔥', 'Combos': '🎉', 'Cachorro-Quente': '🌭', 'Sandubas': '🍔', 'Pão Árabe': '🥙', 'Lanche + Refri': '🥤', 'Bebidas': '🧃', 'Sobremesas': '🍰' };
+const ic = c => ICONE[c] ? `<span class="ic">${ICONE[c]}</span>` : '';
 const idCat = c => 'cat-' + norm(c).replace(/[^a-z0-9]+/g, '-');
 function qtdNoCarrinho(id) { return carrinho.turno === turno ? carrinho.linhas.filter(l => l.id === id).reduce((s, l) => s + l.qtd, 0) : 0; }
 
 function renderMenu() {
   const cats = categorias();
-  $('#cats').innerHTML = cats.map((c, i) => `<a href="#${idCat(c)}" class="${i === 0 ? 'ativo' : ''}">${esc(c)}</a>`).join('');
+  $('#cats').innerHTML = cats.map((c, i) => `<a href="#${idCat(c)}" class="${i === 0 ? 'ativo' : ''}">${ic(c)}${esc(c)}</a>`).join('');
   const pode = podePedir(turno);
   $('#lista').innerHTML = cats.length ? cats.map(c => `
-    <section class="secao" id="${idCat(c)}"><h2>${esc(c)}</h2><div class="grade">${
+    <section class="secao" id="${idCat(c)}"><h2>${ic(c)}${esc(c)}</h2><div class="grade">${
       D.produtos.filter(p => doTurno(p, turno) && p.categoria === c).map(p => {
         const ind = motivoIndisp(p), q = qtdNoCarrinho(p.id);
         const simples = !p.qtd_proteinas && !(p.sabores && p.sabores.length);
@@ -607,11 +700,15 @@ function renderMenu() {
           ? `<div class="qtd"><button data-menos="${p.id}" aria-label="Tirar um">−</button><span>${q}</span><button data-mais="${p.id}" aria-label="Adicionar mais um">+</button></div>`
           : `${q ? `<span class="sub">${q} no pedido</span>` : ''}<button class="btn btn-p btn-add" data-add="${p.id}">${simples ? 'Adicionar' : 'Escolher'}</button>`;
         return `<article class="item revela${window.__rev ? ' on' : ''}${q ? ' no-pedido' : ''}" data-busca="${esc(norm(p.nome + ' ' + (p.descricao || '') + ' ' + p.categoria))}">
-          ${p.foto ? `<button class="thumb-b" data-fotos="${p.id}" aria-label="Ver foto de ${esc(p.nome)}"><img class="thumb" src="${esc(p.foto)}" alt="" loading="lazy" onerror="this.parentNode.remove()">${(p.fotos || []).length > 1 ? `<span class="nfotos">${p.fotos.length} fotos</span>` : ''}</button>` : ''}
+          <div class="foto">
+            ${p.foto ? `<button class="thumb-b" data-fotos="${p.id}" aria-label="Ver foto de ${esc(p.nome)}"><img class="thumb" src="${esc(p.foto)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></button>` : ''}
+            ${p.destaque ? '<span class="selo-i">🔥 Destaque</span>' : ''}
+            ${acao ? `<div class="acao-f">${acao}</div>` : ''}
+          </div>
           <div class="item-c">
-            <div class="linha-preco"><h3>${esc(p.nome)}</h3><span class="pont"></span><b>${brl(precoDe(p))}</b></div>
-            <div class="item-base"><p>${esc(p.descricao || '')}${temAcomp(p) && acompDo(turno) ? `<br><span style="color:var(--tinta)">Acompanha: ${esc(acompDo(turno))}</span>` : ''}</p>
-              <div class="item-pe"><span class="item-preco">${brl(precoDe(p))}</span>${acao ? `<div class="item-acao">${acao}</div>` : ''}</div></div>
+            <div class="linha-preco"><h3>${esc(p.nome)}</h3></div>
+            <div class="item-base"><p>${esc(p.descricao || '')}</p>
+              <div class="item-pe"><span class="item-preco">${brl(precoDe(p))}</span></div></div>
           </div></article>`;
       }).join('')}</div></section>`).join('')
     : `<p class="vazio">Nenhum item neste turno ainda.</p>`;
@@ -1102,7 +1199,7 @@ document.addEventListener('click', e => {
   else if (d.protm) { itemEsc.prot[d.protm] = Math.max(0, (itemEsc.prot[d.protm] || 0) - 1); renderEscolhas(); }
   else if (d.acomp !== undefined) { const on = !itemEsc.acomp.has(d.acomp); on ? itemEsc.acomp.add(d.acomp) : itemEsc.acomp.delete(d.acomp); b.setAttribute('aria-pressed', on); }
   else if (d.sabor !== undefined) { itemEsc.sabor = d.sabor; $$('#saborLista .opcao').forEach(x => x.setAttribute('aria-pressed', x.dataset.sabor === d.sabor)); }
-  else if (d.tipo) { sel.tipo = d.tipo; $$('#tipos .opcao').forEach(x => x.setAttribute('aria-pressed', x.dataset.tipo === d.tipo)); renderCarrinho(); }
+  else if (d.tipo) { sel.tipo = d.tipo; $$('#tipos .opcao').forEach(x => x.setAttribute('aria-pressed', x.dataset.tipo === d.tipo)); renderCarrinho(); if (typeof marcarModo === 'function') marcarModo(); }
   else if (d.pag) { sel.pag = d.pag; $$('#pags .opcao').forEach(x => x.setAttribute('aria-pressed', x.dataset.pag === d.pag)); renderCarrinho(); }
   else if (d.quando) { sel.quando = d.quando; $$('#quando .opcao').forEach(x => x.setAttribute('aria-pressed', x.dataset.quando === d.quando)); preencherHorarios(); }
   else if (d.lmais !== undefined || d.lmenos !== undefined) {
@@ -1180,6 +1277,40 @@ setInterval(() => {
 if (!carrinho.linhas || (carrinho.linhas.length && !carrinho.turno) || Date.now() - (carrinho.ts || 0) > 10 * 3600e3) carrinho = { turno: null, linhas: [] };
 carregar();
 B.carregarFontes();
+
+/* ---------- QR Code da lanchonete ----------
+   Link com ?local (QR da parede) ou ?mesa=5 (QR da mesa): o pedido já vai como "Comer no local",
+   sem pedir endereço — o cliente escolhe, põe o nome e envia. */
+function marcarModo() {}
+const URLP = new URLSearchParams(location.search), MESA = URLP.get('mesa');
+if (MESA || URLP.has('local')) {
+  sel.tipo = 'local';
+  $('#avisoMesa').hidden = false;
+  $('#avisoMesa').textContent = MESA ? `🍽️ Mesa ${MESA} — escolha seu lanche e toque em "Ver pedido"` : '🍽️ Você está na lanchonete — escolha seu lanche e toque em "Ver pedido"';
+  if (MESA && !$('#cObs').value) $('#cObs').value = `Mesa ${MESA}`;
+}
+
+/* ---------- Banners passando sozinhos ---------- */
+(function () {
+  const tr = $('#trilho'), bs = [...tr.children];
+  $('#pontos').innerHTML = bs.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('');
+  const atual = () => Math.round(tr.scrollLeft / (bs[0].offsetWidth + 12));
+  const marcar = () => $$('#pontos i').forEach((p, i) => p.classList.toggle('on', i === Math.min(atual(), bs.length - 1)));
+  tr.addEventListener('scroll', () => requestAnimationFrame(marcar), { passive: true });
+  let pausa = 0;
+  ['touchstart', 'mousedown', 'wheel'].forEach(ev => tr.addEventListener(ev, () => { pausa = Date.now(); }, { passive: true }));
+  setInterval(() => {
+    if (Date.now() - pausa < 6000 || document.hidden) return;
+    const prox = (atual() + 1) % bs.length;
+    tr.scrollTo({ left: prox * (bs[0].offsetWidth + 12), behavior: 'smooth' });
+  }, 3500);
+  // tocar no banner = adicionar o combo
+  tr.addEventListener('click', e => {
+    const b = e.target.closest('[data-banner]'); if (!b || !D) return;
+    const p = D.produtos.find(x => norm(x.nome) === norm(b.dataset.banner));
+    if (p) abrirItem(p);
+  });
+})();
 $('#busca').addEventListener('input', filtrar);
 setTimeout(() => B.checarAtualizacao(() => nItens() > 0 || $$('.modal').some(m => !m.hidden)), 2000);
 </script>
