@@ -1,7 +1,7 @@
 /* MODO DEMONSTRAÇÃO — só é usado quando o config.js ainda não tem o link da planilha.
    Roda o mesmo motor da planilha (Code.gs) dentro do navegador, guardando os dados só neste aparelho. */
 (function () {
-  const CHAVE = 'demo_la_nas_meninas_v2';
+  const CHAVE = 'demo_la_nas_meninas_v3';
   let salvo = {}; try { salvo = JSON.parse(localStorage.getItem(CHAVE) || '{}'); } catch (e) {}
   const limpa = v => typeof v === 'string' && v.startsWith("'") ? v.slice(1) : (v === undefined || v === null ? '' : v);
   function Range(sh, r, c, nr, nc) { this.sh = sh; this.r = r; this.c = c; this.nr = nr || 1; this.nc = nc || 1; }
@@ -72,7 +72,7 @@ const CONFIG_PADRAO = {
   tz: 'America/Fortaleza',
   slogan: 'Peça seu lanche diferenciado!',
   pedidos_ativos: true,
-  modo: 'auto',
+  modo: 'aberta',   // amostra: sempre aceitando pedidos (no painel dá pra trocar para automático pelo horário)
   turnos: {
     almoco: { nome: 'Lanches', ativo: true, inicio: '09:00', fim: '23:59' },
     noite:  { nome: 'Madrugada', ativo: true, inicio: '00:00', fim: '01:55' }

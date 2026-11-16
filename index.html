@@ -364,6 +364,11 @@ body{background-image:none}
 .item.no-pedido{box-shadow:0 0 0 2px var(--rosa) inset}
 .secao>h2{font-size:22px}
 .secao>h2 .ic{font-size:22px}
+.item-c{display:flex;flex-direction:column;width:100%;text-align:left;flex:1;cursor:pointer;color:inherit}
+.item-c[tabindex="-1"]{cursor:default}
+.add-txt{font-size:11.5px;font-weight:800;color:#fff;background:rgba(255,45,138,.18);border:1px solid rgba(255,45,138,.4);padding:5px 9px;border-radius:10px}
+.aviso-fechado{margin-top:12px;font-size:13px;line-height:1.45;color:#ffe6a6;background:rgba(255,207,74,.1);border:1px solid rgba(255,207,74,.3);padding:10px 12px;border-radius:14px}
+.aviso-fechado b{color:#fff}
 </style>
 </head>
 <body>
@@ -380,6 +385,7 @@ body{background-image:none}
     <p class="hero-data" id="heroData"></p>
 
     <p class="aviso-mesa" id="avisoMesa" hidden></p>
+    <p class="aviso-fechado" id="avisoFechado" hidden></p>
     <div><div class="turnos" id="turnos" role="group" aria-label="Turno do cardápio" hidden></div></div>
   </div>
   <div class="banners" aria-label="Promoções">
@@ -523,9 +529,9 @@ body{background-image:none}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
-<script src="config.js?v=3"></script>
-<script>if (!/^https?:\/\//.test(APP.API_URL || '')) document.write('<script src="demo.js?v=3"><\/script>');</script>
-<script src="base.js?v=3"></script>
+<script src="config.js?v=5"></script>
+<script>if (!/^https?:\/\//.test(APP.API_URL || '')) document.write('<script src="demo.js?v=5"><\/script>');</script>
+<script src="base.js?v=5"></script>
 <script>
 const { $, $$, brl, esc, norm, digitos, numBR, mascaraTel, ls, rpc, min, hhmm, TURNOS, nomeTurno, turnoAtivo, turnoEm, toast } = B;
 const L = APP.LOJA;
@@ -669,6 +675,9 @@ function renderQuadro() {
       ? `Você pode encomendar agora para o ${nomeTurno(c, turno).toLowerCase()} (a partir das ${tt.inicio}).`
       : `Pedidos do ${nomeTurno(c, turno).toLowerCase()} abrem às ${tt.inicio}.`;
   } else av.hidden = true;
+  const st = textoStatus(), af = $('#avisoFechado');
+  af.hidden = podePedir(turno);
+  af.innerHTML = `🌙 <b>${esc(st[1])}</b><br>Dá para ver o cardápio à vontade — os pedidos voltam quando abrir.`;
   const end = c.endereco ? `<span>${esc(c.endereco)}</span>` : '';
   const zap = digitos(c.whatsapp);
   $('#infoLoja').innerHTML = end + (zap.length >= 10 ? `<span>WhatsApp: <a href="https://wa.me/55${zap}" target="_blank" rel="noopener">${esc(B.mascaraTel(zap))}</a></span>` : '');
@@ -705,11 +714,11 @@ function renderMenu() {
             ${p.destaque ? '<span class="selo-i">🔥 Destaque</span>' : ''}
             ${acao ? `<div class="acao-f">${acao}</div>` : ''}
           </div>
-          <div class="item-c">
+          <button class="item-c" ${pode && !ind ? `data-add="${p.id}"` : 'tabindex="-1"'}>
             <div class="linha-preco"><h3>${esc(p.nome)}</h3></div>
             <div class="item-base"><p>${esc(p.descricao || '')}</p>
-              <div class="item-pe"><span class="item-preco">${brl(precoDe(p))}</span></div></div>
-          </div></article>`;
+              <div class="item-pe"><span class="item-preco">${brl(precoDe(p))}</span>${pode && !ind ? '<span class="add-txt">Adicionar</span>' : ''}</div></div>
+          </button></article>`;
       }).join('')}</div></section>`).join('')
     : `<p class="vazio">Nenhum item neste turno ainda.</p>`;
   observarCats(); revelar(); filtrar();
