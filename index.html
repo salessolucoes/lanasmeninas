@@ -369,6 +369,11 @@ body{background-image:none}
 .add-txt{font-size:11.5px;font-weight:800;color:#fff;background:rgba(255,45,138,.18);border:1px solid rgba(255,45,138,.4);padding:5px 9px;border-radius:10px}
 .aviso-fechado{margin-top:12px;font-size:13px;line-height:1.45;color:#ffe6a6;background:rgba(255,207,74,.1);border:1px solid rgba(255,207,74,.3);padding:10px 12px;border-radius:14px}
 .aviso-fechado b{color:#fff}
+.item.promo .foto{aspect-ratio:2/3}
+.item.promo .foto::after{display:none}
+.item.promo .selo-i{display:none}
+.pontos .contador{font-size:12px;font-weight:800;color:var(--suave);background:var(--noite-2);border:1px solid var(--borda);padding:4px 11px;border-radius:999px}
+.pontos .contador b{color:#fff}
 </style>
 </head>
 <body>
@@ -389,12 +394,7 @@ body{background-image:none}
     <div><div class="turnos" id="turnos" role="group" aria-label="Turno do cardápio" hidden></div></div>
   </div>
   <div class="banners" aria-label="Promoções">
-    <div class="trilho" id="trilho">
-      <button class="banner" data-banner="5 Hot Dogs + Coca 600ml"><img class="fundo" src="img/banners/banner-5-hotdogs.jpg" alt=""><img class="arte" src="img/banners/banner-5-hotdogs.jpg" alt="Promoção 5 cachorros-quentes + Coca 600ml por R$ 42,99"><span class="pedir">Quero esse +</span></button>
-      <button class="banner" data-banner="4 Mistoburgueres + Coca 600ml"><img class="fundo" src="img/banners/banner-4-mistos.jpg" alt="" loading="lazy"><img class="arte" src="img/banners/banner-4-mistos.jpg" alt="Promoção 4 mistoburgueres + Coca 600ml por R$ 55,99" loading="lazy"><span class="pedir">Quero esse +</span></button>
-      <button class="banner" data-banner="3 Mistoburgueres + Guaraná 200ml"><img class="fundo" src="img/banners/banner-3-mistos.jpg" alt="" loading="lazy"><img class="arte" src="img/banners/banner-3-mistos.jpg" alt="Promoção 3 mistoburgueres + Guaraná por R$ 40,99" loading="lazy"><span class="pedir">Quero esse +</span></button>
-      <button class="banner" data-banner="2 Hot Dogs + 2 Mistoburgueres"><img class="fundo" src="img/banners/banner-2-2.jpg" alt="" loading="lazy"><img class="arte" src="img/banners/banner-2-2.jpg" alt="Promoção 2 cachorros-quentes + 2 mistoburgueres por R$ 42,99" loading="lazy"><span class="pedir">Quero esse +</span></button>
-    </div>
+    <div class="trilho" id="trilho"></div>
     <div class="pontos" id="pontos"></div>
   </div>
 </header>
@@ -529,9 +529,9 @@ body{background-image:none}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
-<script src="config.js?v=5"></script>
-<script>if (!/^https?:\/\//.test(APP.API_URL || '')) document.write('<script src="demo.js?v=5"><\/script>');</script>
-<script src="base.js?v=5"></script>
+<script src="config.js?v=7"></script>
+<script>if (!/^https?:\/\//.test(APP.API_URL || '')) document.write('<script src="demo.js?v=7"><\/script>');</script>
+<script src="base.js?v=7"></script>
 <script>
 const { $, $$, brl, esc, norm, digitos, numBR, mascaraTel, ls, rpc, min, hhmm, TURNOS, nomeTurno, turnoAtivo, turnoEm, toast } = B;
 const L = APP.LOJA;
@@ -627,7 +627,7 @@ function saboresDisp(p) { const off = p.sabores_off || []; return (p.sabores || 
 }
 
 /* ================= RENDER ================= */
-function renderTudo() { renderQuadro(); renderMenu(); renderRepetir(); atualizarBarra(); }
+function renderTudo() { renderQuadro(); renderMenu(); renderRepetir(); atualizarBarra(); if (typeof renderBanners === 'function') renderBanners(); }
 
 function acompDo(t) { const a = cfg().acompanhamentos || {}; return String(a[t] || '').trim(); }
 function precoDe(p, t = turno) { return t === 'noite' && Number(p.preco_noite) > 0 ? Number(p.preco_noite) : Number(p.preco); }   // preço do turno
@@ -636,10 +636,24 @@ function listaAcomp(t) { return acompDo(t).split(/,|;|\s+e\s+/i).map(x => x.trim
 function telOpcional() { return sel.tipo === 'local' && !cfg().tel_local; }
 function bairrosLista() { const e = cfg().entrega || {}; return Array.isArray(e.bairros) ? e.bairros.filter(b => b && b.nome) : []; }
 function bairroAtual() { return bairrosLista().length ? $('#cBairroSel').value : $('#cBairro').value.trim(); }
+// mesmo cálculo da planilha: +acréscimo de madrugada (ex.: +R$ 2 depois da meia-noite)
+function acrescimoNoite() {
+  const a = (cfg().entrega || {}).acrescimo_noite; if (!a || !Number(a.valor)) return 0;
+  const m = B.minutosAgora(), i = min(a.inicio || '00:00'), f = min(a.fim || '05:00');
+  return (i <= f ? (m >= i && m < f) : (m >= i || m < f)) ? Number(a.valor) : 0;
+}
+// combo com "Entrega Grátis" no nome: taxa zero nos bairros próximos (igual à planilha)
+function entregaGratis(base) {
+  const g = (cfg().entrega || {}).gratis_combo; if (!g || !g.ativo) return false;
+  const w = norm(g.palavra || 'entrega gratis');
+  const tem = carrinho.linhas.some(l => { const p = D && D.produtos.find(x => x.id === l.id); return norm((p && p.nome) || l.nome || '').includes(w); });
+  return tem && base <= (Number(g.ate) || 0);
+}
 function taxaEntrega() {
   const c = cfg(), bs = bairrosLista();
   if (!bs.length) return Number(c.entrega && c.entrega.taxa) || 0;
-  const b = bs.find(x => x.nome === $('#cBairroSel').value); return b ? Number(b.taxa) || 0 : 0;
+  const b = bs.find(x => x.nome === $('#cBairroSel').value); if (!b) return 0;
+  return entregaGratis(Number(b.taxa) || 0) ? 0 : (Number(b.taxa) || 0) + acrescimoNoite();
 }
 function destaquesDo(t) { return D.produtos.filter(p => doTurno(p, t) && p.destaque && !p.esgotado).slice(0, 10); }
 function renderQuadro() {
@@ -689,7 +703,7 @@ function categorias() {
   const r = c => ordem.indexOf(c) + 1 || (c === 'Combos' ? 0 : 999);   // combos vêm primeiro se o dono não definiu a ordem
   return cats.sort((a, b) => r(a) - r(b));
 }
-const ICONE = { 'Promoções': '🔥', 'Combos': '🎉', 'Cachorro-Quente': '🌭', 'Sandubas': '🍔', 'Pão Árabe': '🥙', 'Lanche + Refri': '🥤', 'Bebidas': '🧃', 'Sobremesas': '🍰' };
+const ICONE = { 'Promoções': '🔥', 'Combos': '🎉', 'Cachorro-Quente': '🌭', 'Sandubas': '🍔', 'Pão Árabe': '🥙', 'Lanche + Refri': '🥤', 'Bebidas': '🧃', 'Sobremesas': '🍰', 'Doces': '🍫' };
 const ic = c => ICONE[c] ? `<span class="ic">${ICONE[c]}</span>` : '';
 const idCat = c => 'cat-' + norm(c).replace(/[^a-z0-9]+/g, '-');
 function qtdNoCarrinho(id) { return carrinho.turno === turno ? carrinho.linhas.filter(l => l.id === id).reduce((s, l) => s + l.qtd, 0) : 0; }
@@ -708,7 +722,7 @@ function renderMenu() {
         else if (pode) acao = simples && q
           ? `<div class="qtd"><button data-menos="${p.id}" aria-label="Tirar um">−</button><span>${q}</span><button data-mais="${p.id}" aria-label="Adicionar mais um">+</button></div>`
           : `${q ? `<span class="sub">${q} no pedido</span>` : ''}<button class="btn btn-p btn-add" data-add="${p.id}">${simples ? 'Adicionar' : 'Escolher'}</button>`;
-        return `<article class="item revela${window.__rev ? ' on' : ''}${q ? ' no-pedido' : ''}" data-busca="${esc(norm(p.nome + ' ' + (p.descricao || '') + ' ' + p.categoria))}">
+        return `<article class="item${p.categoria === 'Promoções' ? ' promo' : ''} revela${window.__rev ? ' on' : ''}${q ? ' no-pedido' : ''}" data-busca="${esc(norm(p.nome + ' ' + (p.descricao || '') + ' ' + p.categoria))}">
           <div class="foto">
             ${p.foto ? `<button class="thumb-b" data-fotos="${p.id}" aria-label="Ver foto de ${esc(p.nome)}"><img class="thumb" src="${esc(p.foto)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></button>` : ''}
             ${p.destaque ? '<span class="selo-i">🔥 Destaque</span>' : ''}
@@ -883,7 +897,7 @@ function abrirCarrinho() {
   $('#cBairro').hidden = !!bs.length; $('#cBairroSel').hidden = !bs.length;
   if (bs.length) {
     const atual = $('#cBairroSel').value || cli.bairro || '';
-    $('#cBairroSel').innerHTML = '<option value="">Escolha o bairro</option>' + bs.map(b => `<option value="${esc(b.nome)}" ${b.nome === atual ? 'selected' : ''}>${esc(b.nome)} · ${Number(b.taxa) > 0 ? brl(b.taxa) : 'entrega grátis'}</option>`).join('');
+    $('#cBairroSel').innerHTML = '<option value="">Escolha o bairro</option>' + bs.map(b => `<option value="${esc(b.nome)}" ${b.nome === atual ? 'selected' : ''}>${esc(b.nome)} · ${Number(b.taxa) + acrescimoNoite() > 0 ? brl(Number(b.taxa) + acrescimoNoite()) : 'entrega grátis'}</option>`).join('');
   }
   if (!$('#cComp').value) $('#cComp').value = cli.comp || '';
   $('#carErro').textContent = '';
@@ -1299,24 +1313,37 @@ if (MESA || URLP.has('local')) {
   if (MESA && !$('#cObs').value) $('#cObs').value = `Mesa ${MESA}`;
 }
 
-/* ---------- Banners passando sozinhos ---------- */
+/* ---------- Banners passando sozinhos ----------
+   Montados a partir dos produtos da categoria "Promoções" que têm foto
+   (a dona troca as promoções pelo painel e os banners mudam juntos). */
+var BAN = { sig: '' };
+function renderBanners() {
+  if (!D) return;
+  const ps = D.produtos.filter(p => p.categoria === 'Promoções' && p.foto && !p.esgotado);
+  const sig = ps.map(p => p.id).join(',');
+  $('.banners').hidden = !ps.length;
+  if (sig === BAN.sig) return; BAN.sig = sig;
+  $('#trilho').innerHTML = ps.map((p, i) => `<button class="banner" data-banner="${p.id}" aria-label="${esc(p.nome)} — ${brl(precoDe(p))}">
+    <img class="fundo" src="${esc(p.foto)}" alt="" loading="${i < 2 ? 'eager' : 'lazy'}"><img class="arte" src="${esc(p.foto)}" alt="" loading="${i < 2 ? 'eager' : 'lazy'}"><span class="pedir">Quero esse +</span></button>`).join('');
+  $('#pontos').innerHTML = ps.length > 8 ? `<span class="contador"><b>1</b> / ${ps.length}</span>` : ps.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('');
+}
 (function () {
-  const tr = $('#trilho'), bs = [...tr.children];
-  $('#pontos').innerHTML = bs.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('');
-  const atual = () => Math.round(tr.scrollLeft / (bs[0].offsetWidth + 12));
-  const marcar = () => $$('#pontos i').forEach((p, i) => p.classList.toggle('on', i === Math.min(atual(), bs.length - 1)));
+  const tr = $('#trilho');
+  const passo = () => (tr.firstElementChild ? tr.firstElementChild.offsetWidth + 12 : 1);
+  const atual = () => Math.round(tr.scrollLeft / passo());
+  const marcar = () => { const n = tr.children.length, a = Math.min(atual(), n - 1);
+    const c = $('#pontos .contador b'); if (c) c.textContent = a + 1; else $$('#pontos i').forEach((p, i) => p.classList.toggle('on', i === a)); };
   tr.addEventListener('scroll', () => requestAnimationFrame(marcar), { passive: true });
   let pausa = 0;
   ['touchstart', 'mousedown', 'wheel'].forEach(ev => tr.addEventListener(ev, () => { pausa = Date.now(); }, { passive: true }));
   setInterval(() => {
-    if (Date.now() - pausa < 6000 || document.hidden) return;
-    const prox = (atual() + 1) % bs.length;
-    tr.scrollTo({ left: prox * (bs[0].offsetWidth + 12), behavior: 'smooth' });
+    const n = tr.children.length; if (n < 2 || Date.now() - pausa < 6000 || document.hidden) return;
+    tr.scrollTo({ left: ((atual() + 1) % n) * passo(), behavior: 'smooth' });
   }, 3500);
-  // tocar no banner = adicionar o combo
+  // tocar no banner = adicionar a promoção
   tr.addEventListener('click', e => {
     const b = e.target.closest('[data-banner]'); if (!b || !D) return;
-    const p = D.produtos.find(x => norm(x.nome) === norm(b.dataset.banner));
+    const p = D.produtos.find(x => x.id === b.dataset.banner);
     if (p) abrirItem(p);
   });
 })();

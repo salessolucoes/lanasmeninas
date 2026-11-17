@@ -1,7 +1,7 @@
 /* MODO DEMONSTRAÇÃO — só é usado quando o config.js ainda não tem o link da planilha.
    Roda o mesmo motor da planilha (Code.gs) dentro do navegador, guardando os dados só neste aparelho. */
 (function () {
-  const CHAVE = 'demo_la_nas_meninas_v3';
+  const CHAVE = 'demo_la_nas_meninas_v5';
   let salvo = {}; try { salvo = JSON.parse(localStorage.getItem(CHAVE) || '{}'); } catch (e) {}
   const limpa = v => typeof v === 'string' && v.startsWith("'") ? v.slice(1) : (v === undefined || v === null ? '' : v);
   function Range(sh, r, c, nr, nc) { this.sh = sh; this.r = r; this.c = c; this.nr = nr || 1; this.nc = nc || 1; }
@@ -72,12 +72,66 @@ const CONFIG_PADRAO = {
   tz: 'America/Fortaleza',
   slogan: 'Peça seu lanche diferenciado!',
   pedidos_ativos: true,
-  modo: 'aberta',   // amostra: sempre aceitando pedidos (no painel dá pra trocar para automático pelo horário)
+  modo: 'aberta',   // amostra: sempre aceitando pedidos
   turnos: {
     almoco: { nome: 'Lanches', ativo: true, inicio: '09:00', fim: '23:59' },
     noite:  { nome: 'Madrugada', ativo: true, inicio: '00:00', fim: '01:55' }
   },
-  entrega: { ativo: true, taxa: 0, bairros: [] }, retirada: true, local: true,
+  entrega: { ativo: true, taxa: 0, bairros: [
+    { nome: "Alagadiço", taxa: 6 },
+    { nome: "Atlântico", taxa: 7 },
+    { nome: "Atlântico (depois da Fyber)", taxa: 7 },
+    { nome: "Boi Morto", taxa: 10 },
+    { nome: "Boca do Poço", taxa: 6 },
+    { nome: "Cabra Morta", taxa: 10 },
+    { nome: "Campo de Aviação", taxa: 6 },
+    { nome: "Campo de Semente 1", taxa: 8 },
+    { nome: "Campo de Semente 2", taxa: 12 },
+    { nome: "Carrasco", taxa: 8 },
+    { nome: "Carlotas 1", taxa: 6 },
+    { nome: "Carlotas 2", taxa: 6 },
+    { nome: "Conjunto Nova Esperança", taxa: 6 },
+    { nome: "Coreia", taxa: 6 },
+    { nome: "CCF", taxa: 6 },
+    { nome: "Flexeiras", taxa: 12 },
+    { nome: "Lagoa", taxa: 6 },
+    { nome: "Maleitas", taxa: 6 },
+    { nome: "Mango Village 1", taxa: 22 },
+    { nome: "Mango Village 2", taxa: 25 },
+    { nome: "Mango Village 3", taxa: 27 },
+    { nome: "Mocó", taxa: 8 },
+    { nome: "Muriti dos Carlos", taxa: 15 },
+    { nome: "Novo Paracuru", taxa: 7 },
+    { nome: "Paracuru Ville", taxa: 6 },
+    { nome: "Paracuru Beach", taxa: 6 },
+    { nome: "Lagoa do Giral", taxa: 12 },
+    { nome: "Planalto da Barra", taxa: 10 },
+    { nome: "Pedra Rachada", taxa: 35 },
+    { nome: "Portelinha", taxa: 6 },
+    { nome: "Poço Doce", taxa: 30 },
+    { nome: "Paraipaba", taxa: 40 },
+    { nome: "Maleitas (depois do Posto do Hulk)", taxa: 7 },
+    { nome: "São Pedro de Baixo", taxa: 22 },
+    { nome: "São Pedro de Cima", taxa: 27 },
+    { nome: "Sítio Inglês", taxa: 13 },
+    { nome: "Torre", taxa: 6 },
+    { nome: "Vila da Prefeitura", taxa: 6 },
+    { nome: "Vila São José", taxa: 6 },
+    { nome: "Cacimbão", taxa: 20 },
+    { nome: "Vela Branca", taxa: 40 },
+    { nome: "Jardim Recanto (na pista)", taxa: 20 },
+    { nome: "Jardim de Baixo", taxa: 25 },
+    { nome: "Jardim de Cima", taxa: 35 },
+    { nome: "Barroso", taxa: 45 },
+    { nome: "Jardim do Meio", taxa: 26 },
+    { nome: "Guajiru", taxa: 40 },
+    { nome: "Quatro Bocas", taxa: 40 },
+    { nome: "Barracas (na praia)", taxa: 8 },
+    { nome: "Orla", taxa: 7 },
+    { nome: "Centro", taxa: 6 },
+    { nome: "Riacho Doce", taxa: 7 }
+  ], acrescimo_noite: { valor: 2, inicio: '23:30', fim: '05:00' },
+    gratis_combo: { ativo: true, palavra: 'entrega grátis', ate: 8 } }, retirada: true, local: true,   // gratis_combo: produto com "Entrega Grátis" no nome = taxa zero em bairros de até R$ 8
   escolher_acomp: false, tel_local: false,
   pix_antes: false, pix_minutos: 15, cidade: 'Paracuru',
   pagamentos: { pix: true, dinheiro: true, cartao: true },
@@ -90,7 +144,7 @@ const CONFIG_PADRAO = {
   arte_abertura: false, pedir_de_novo: true, encomenda: false, cupons: false,
   fidelidade: { ativo: false, modo: 'pedidos', a_cada: 10, valor_ponto: 10, desconto: 10, tipo_premio: 'valor', minimo: 0,
                 tipos: { entrega: true, retirada: true, local: true } },
-  categorias: ['Promoções', 'Combos', 'Cachorro-Quente', 'Sandubas', 'Pão Árabe', 'Lanche + Refri']
+  categorias: ['Promoções', 'Combos', 'Cachorro-Quente', 'Sandubas', 'Pão Árabe', 'Lanche + Refri', 'Bebidas', 'Doces']
 };
 
 /* =====================================================================
@@ -118,61 +172,150 @@ function setup() {
 
   if (aba_('Produtos').getLastRow() < 2) {
     const prod = [
-      ["5 Hot Dogs + Coca 600ml", "5 cachorros-quentes tradicionais caprichados + Coca-Cola 600ml GRÁTIS. De R$ 44,00 por R$ 42,99 — você economiza R$ 2,01!", 42.99, "Promoções", "", 0, "", false, "img/p/promo-5-hotdogs.jpg", true, 1],
-      ["4 Mistoburgueres + Coca 600ml", "4 sandubas mistoburguer (pão bola, alface, tomate, carne de hambúrguer, queijo, presunto, maionese e ketchup) + Coca-Cola 600ml GRÁTIS.", 55.99, "Promoções", "", 0, "", false, "img/p/promo-4-mistos.jpg", true, 2],
-      ["3 Mistoburgueres + Guaraná 200ml", "Na compra de 3 mistoburgueres você ganha uma Guaraná Antarctica 200ml (buchudinha) GRÁTIS.", 40.99, "Promoções", "", 0, "", false, "img/p/promo-3-mistos.jpg", true, 3],
-      ["2 Hot Dogs + 2 Mistoburgueres", "2 cachorros-quentes tradicionais + 2 mistoburgueres + Guaraná Antarctica 200ml GRÁTIS.", 42.99, "Promoções", "", 0, "", false, "img/p/promo-2-2.jpg", true, 4],
-      ["3 Hot Dogs + Guaraná 200ml", "3 cachorros-quentes tradicionais (pão hot, alface, salsicha, molho bolonhesa especial das meninas, batata palha, maionese e ketchup) + Guaraná 200ml GRÁTIS. De R$ 27,00 por R$ 25,99.", 25.99, "Promoções", "", 0, "", false, "img/p/promo-3-hotdogs.jpg", false, 5],
-      ["Combo 06 + Guaraná 200ml", "2 cachorros-quentes tradicionais + 1 sanduba mistoburguer + Guaraná 200ml GRÁTIS.", 30.99, "Promoções", "", 0, "", false, "img/p/promo-combo06.jpg", false, 6],
-      ["Super Combo", "2 sandubas mistoburguer + 5 cachorros-quentes tradicionais + Guaraná 1 litro. Pra galera toda!", 69.99, "Combos", "", 0, "", false, "img/p/super-combo.jpg", true, 7],
-      ["Combo Galera (sem refri)", "4 sandubas mistoburguer + 3 cachorros-quentes tradicionais. Muito lanche pra dividir.", 68.99, "Combos", "", 0, "", false, "img/p/combo-galera.jpg", false, 8],
-      ["Combo Família", "3 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Guaraná 1 litro.", 55.99, "Combos", "", 0, "", false, "img/p/combo-familia.jpg", true, 9],
-      ["4 Mistos + 3 Hot Dogs + Coca 600ml", "4 sandubas mistoburguer + 3 cachorros-quentes tradicionais + Coca-Cola 600ml GRÁTIS.", 76.99, "Combos", "", 0, "", false, "img/p/combo-4-3.jpg", false, 10],
-      ["Combo Diferenciado", "1 cachorro-quente tradicional + 1 sanduba mistoburguer + 1 pão árabe mix + Coca-Cola 600ml.", 49.99, "Combos", "", 0, "", false, "img/p/combo-diferenciado.jpg", true, 11],
-      ["Mega Combo", "2 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Guaraná 1 litro GRÁTIS.", 48.99, "Combos", "", 0, "", false, "img/p/mega-combo.jpg", false, 12],
-      ["3 Mistos + 1 Hot Dog + Guaraná 200ml", "Sandubas mistoburguer + 1 cachorro-quente tradicional + Guaraná 200ml GRÁTIS.", 46.99, "Combos", "", 0, "", false, "img/p/combo-3-1.jpg", false, 13],
-      ["2 Mistos + 1 Hot Dog + Guaraná 200ml", "2 sandubas mistoburguer + 1 cachorro-quente tradicional + Guaraná 200ml GRÁTIS.", 35.99, "Combos", "", 0, "", false, "img/p/combo-2-1.jpg", false, 14],
-      ["Combo 07", "2 sandubas mistoburguer + Coca-Cola 600ml.", 31.99, "Combos", "", 0, "", false, "img/p/combo07.jpg", false, 15],
-      ["Combo 06", "2 cachorros-quentes tradicionais + 1 sanduba mistoburguer.", 25.99, "Combos", "", 0, "", false, "img/p/combo06.jpg", false, 16],
-      ["Combo Queridinho", "1 sanduba mistoburguer + Guaraná 200ml. O queridinho da casa!", 16.99, "Combos", "", 0, "", false, "img/p/combo-queridinho.jpg", false, 17],
-      ["Cachorro-Quente Tradicional", "Pão hot, alface, salsicha, molho bolonhesa especial das meninas, batata palha, maionese e ketchup.", 6.99, "Cachorro-Quente", "", 0, "", false, "img/p/hd-tradicional.jpg", false, 18],
-      ["Cachorro-Quente com Cheddar", "Pão hot, alface, salsicha, molho bolonhesa das meninas, cheddar, batata palha, maionese e ketchup.", 7.99, "Cachorro-Quente", "", 0, "", false, "img/p/hd-cheddar.jpg", false, 19],
-      ["Cachorro-Quente com Barbecue", "Pão, alface, salsicha, molho de carne, batata palha, cheddar e barbecue.", 7.99, "Cachorro-Quente", "", 0, "", false, "img/p/hd-barbecue.jpg", false, 20],
-      ["Hot Dog com Frango", "Pão hot, alface, salsicha, molho bolonhesa especial das meninas, frango desfiado, maionese e ketchup.", 8.99, "Cachorro-Quente", "", 0, "", false, "img/p/hd-frango.jpg", false, 21],
-      ["Cachorro-Quente com Calabresa", "Pão hot, alface, molho bolonhesa das meninas, salsicha, calabresa ralada, maionese e ketchup.", 8.99, "Cachorro-Quente", "", 0, "", false, "img/p/hd-calabresa.jpg", false, 22],
-      ["2 Cachorros-Quentes Tradicionais", "2 unidades: pão hot, alface, salsicha, molho bolonhesa especial das meninas, batata palha, maionese e ketchup.", 13.99, "Cachorro-Quente", "", 0, "", false, "img/p/hd-2.jpg", false, 23],
-      ["2 Cachorros-Quentes com Barbecue", "2 unidades: pão, alface, salsicha, molho de carne, batata palha, cheddar e barbecue.", 15.99, "Cachorro-Quente", "", 0, "", false, "img/p/hd-2-barbecue.jpg", false, 24],
-      ["Mistoburguer", "Pão bola, alface, tomate, carne de hambúrguer, queijo, presunto, maionese e ketchup.", 11.99, "Sandubas", "", 0, "", false, "img/p/mistoburguer.jpg", false, 25],
-      ["Sanduba de Frango e Salada", "Pão bola, queijo, presunto, frango desfiado, maionese e ketchup.", 11.99, "Sandubas", "", 0, "", false, "img/p/sanduba-frango-salada.jpg", false, 26],
-      ["Sanduba Mistovo", "Pão bola, alface, tomate, carne de hambúrguer, queijo, presunto, ovo, maionese e ketchup.", 13.99, "Sandubas", "", 0, "", false, "img/p/mistovo.jpg", false, 27],
-      ["Mistoburguer com Frango", "Pão bola, alface, tomate, carne de hambúrguer, queijo, presunto, frango desfiado, maionese e ketchup.", 14.99, "Sandubas", "", 0, "", false, "img/p/misto-frango.jpg", false, 28],
-      ["Sanduba das Meninas", "Pão bola, carne de hambúrguer, ovo, tomate, alface, cebola caramelizada, queijo, cheddar, maionese e ketchup.", 16.99, "Sandubas", "", 0, "", false, "img/p/sanduba-meninas.jpg", true, 29],
-      ["Sandufrango", "Pão bola, alface, tomate, carne de hambúrguer, queijo, presunto, ovo, frango desfiado, batata palha, maionese e ketchup.", 16.99, "Sandubas", "", 0, "", false, "img/p/sandufrango.jpg", false, 30],
-      ["X-Calabresa", "Pão bola, alface, tomate, carne de hambúrguer, queijo, cebola caramelizada, bacon, calabresa, maionese e ketchup.", 16.99, "Sandubas", "", 0, "", false, "img/p/x-calabresa.jpg", false, 31],
-      ["X-Bacon", "Pão bola, alface, tomate, carne de hambúrguer, queijo, ovo, cebola caramelizada, cheddar, bacon, maionese e ketchup.", 17.99, "Sandubas", "", 0, "", false, "img/p/x-bacon.jpg", false, 32],
-      ["Sanduba Completão", "Pão bola, alface, tomate, carne de hambúrguer, presunto, queijo, ovo, cebola caramelizada, salsicha, cenoura, cheddar, maionese e ketchup.", 21.99, "Sandubas", "", 0, "", false, "img/p/sanduba-completao.jpg", false, 33],
-      ["Sanduba Tudo Que Tenho Direito", "Pão bola, alface, tomate, frango, carne de hambúrguer, queijo, presunto, ovo, calabresa, batata palha, maionese e ketchup.", 21.99, "Sandubas", "", 0, "", false, "img/p/sanduba-tudo.jpg", false, 34],
-      ["Burguer Duplo", "Pão bola, 2 carnes de hambúrguer, alface, tomate, ovo, queijo, cebola caramelizada, cheddar, maionese e ketchup.", 24.99, "Sandubas", "", 0, "", false, "img/p/burguer-duplo.jpg", false, 35],
-      ["Pão Árabe de Calabresa", "Pão árabe, alface, tomate, carne de hambúrguer, queijo, presunto, calabresa, cebola caramelizada, cheddar, maionese e ketchup.", 20.99, "Pão Árabe", "", 0, "", false, "img/p/arabe-calabresa.jpg", false, 36],
-      ["Pão Árabe Mix", "Pão árabe, alface, tomate, carne de hambúrguer, queijo, presunto, ovo, calabresa, cebola caramelizada, cheddar, maionese e ketchup.", 22.99, "Pão Árabe", "", 0, "", false, "img/p/arabe-mix.jpg", false, 37],
-      ["Pão Árabe Completão", "Pão árabe, alface, tomate, carne de hambúrguer, queijo, presunto, ovo, calabresa, frango desfiado, cebola caramelizada, cheddar, maionese e ketchup.", 25.99, "Pão Árabe", "", 0, "", false, "img/p/arabe-completao.jpg", true, 38],
-      ["Árabe Especial das Meninas", "Pão árabe, alface, cenoura, tomate, cebola caramelizada, carne de hambúrguer, presunto, queijo, ovo, salsicha, bacon, calabresa, cheddar, maionese e ketchup.", 29.99, "Pão Árabe", "", 0, "", false, "img/p/arabe-especial.jpg", true, 39],
-      ["2 Pães Árabes Mix", "2 pães árabes mix (pão árabe, alface, tomate, carne de hambúrguer, queijo, presunto, ovo, calabresa, cebola caramelizada, cheddar, maionese e ketchup).", 45.99, "Pão Árabe", "", 0, "", false, "img/p/arabe-2-mix.jpg", false, 40],
-      ["Combo Árabes", "2 pães árabes mix + Guaraná 1 litro.", 57.99, "Pão Árabe", "", 0, "", false, "img/p/combo-arabes.jpg", false, 41],
-      ["Combo Solteir@", "1 pão árabe de calabresa + Guaraná 200ml.", 25.99, "Lanche + Refri", "", 0, "", false, "img/p/combo-solteiro.jpg", false, 42],
-      ["2 Hot Dogs + Guaraná 200ml", "2 cachorros-quentes tradicionais + Guaraná 200ml.", 18.99, "Lanche + Refri", "", 0, "", false, "img/p/hd2-guarana.jpg", false, 43],
-      ["Hot Dog com Cheddar + Coca Lata", "Cachorro-quente com cheddar + Coca-Cola lata 350ml.", 14.99, "Lanche + Refri", "", 0, "", false, "img/p/hd-cheddar-coca.jpg", false, 44],
-      ["Sanduba das Meninas + Guaraná 200ml", "Sanduba das Meninas + Guaraná 200ml.", 22.99, "Lanche + Refri", "", 0, "", false, "img/p/meninas-guarana.jpg", false, 45],
-      ["Sanduba das Meninas + Coca 250ml", "Sanduba das Meninas + Coca-Cola 250ml.", 22.99, "Lanche + Refri", "", 0, "", false, "img/p/meninas-coca.jpg", false, 46],
-      ["X-Bacon + Coca 600ml", "X-Bacon + Coca-Cola 600ml.", 25.99, "Lanche + Refri", "", 0, "", false, "img/p/xbacon-coca.jpg", false, 47],
-      ["Pão Árabe Mix + Guaraná 200ml", "Pão árabe mix + Guaraná 200ml.", 27.99, "Lanche + Refri", "", 0, "", false, "img/p/arabe-mix-guarana200.jpg", false, 48],
-      ["Pão Árabe Mix + Coca Lata", "Pão árabe mix + Coca-Cola lata 350ml.", 28.99, "Lanche + Refri", "", 0, "", false, "img/p/arabe-mix-coca-lata.jpg", false, 49],
-      ["Pão Árabe Mix + Guaraná 600ml", "Pão árabe mix + Guaraná 600ml.", 28.99, "Lanche + Refri", "", 0, "", false, "img/p/arabe-mix-guarana600.jpg", false, 50],
-      ["Pão Árabe de Calabresa + Guaraná 600ml", "Pão árabe de calabresa + Guaraná 600ml.", 28.99, "Lanche + Refri", "", 0, "", false, "img/p/arabe-calabresa-guarana.jpg", false, 51],
-      ["Pão Árabe Mix + Coca 600ml", "Pão árabe mix + Coca-Cola 600ml.", 30.99, "Lanche + Refri", "", 0, "", false, "img/p/arabe-mix-coca600.jpg", false, 52],
-      ["Pão Árabe Completão + Coca Lata", "Pão árabe completão + Coca-Cola lata 350ml.", 32.5, "Lanche + Refri", "", 0, "", false, "img/p/completao-coca-lata.jpg", false, 53],
-      ["Árabe Especial + Coca 250ml", "Árabe Especial das Meninas + Coca-Cola 250ml.", 35.99, "Lanche + Refri", "", 0, "", false, "img/p/especial-coca.jpg", false, 54],
-      ["2 Árabes Mix + Coca 600ml", "2 pães árabes mix + Coca-Cola 600ml.", 53.99, "Lanche + Refri", "", 0, "", false, "img/p/arabe-2-coca.jpg", false, 55]
+      ["5 Hot Dogs + Guaraná 600ml", "5 cachorros-quentes tradicionais + Guaraná Antarctica 600ml GRÁTIS. De R$ 44,00 por R$ 41,99.", 41.99, "Promoções", "", 0, "", false, "img/promo/promo-01.jpg", true, 1],
+      ["5 Hot Dogs + Coca 600ml", "5 cachorros-quentes tradicionais + Coca-Cola 600ml GRÁTIS. De R$ 44,00 por R$ 42,99.", 42.99, "Promoções", "", 0, "", false, "img/promo/promo-02.jpg", true, 2],
+      ["3 Hot Dogs + Coca 600ml", "3 cachorros-quentes tradicionais + Coca-Cola 600ml.", 28.99, "Promoções", "", 0, "", false, "img/promo/promo-03.jpg", true, 3],
+      ["2 Hot Dogs + Coca 250ml", "2 cachorros-quentes tradicionais + Coca-Cola 250ml.", 19.5, "Promoções", "", 0, "", false, "img/promo/promo-04.jpg", true, 4],
+      ["2 Hot Dogs + 2 Mistos + Guaraná 200ml", "2 cachorros-quentes tradicionais + 2 mistoburgueres + Guaraná 200ml GRÁTIS.", 42.99, "Promoções", "", 0, "", false, "img/promo/promo-05.jpg", true, 5],
+      ["Mega Combo + Guaraná 200ml", "2 mistoburgueres + 2 cachorros-quentes tradicionais + Guaraná pet 200ml.", 42.99, "Promoções", "", 0, "", false, "img/promo/promo-06.jpg", true, 6],
+      ["Combo 06 + Refri 200ml Grátis", "2 cachorros-quentes tradicionais + 1 mistoburguer + refrigerante 200ml GRÁTIS.", 30.99, "Promoções", "", 0, "", false, "img/promo/promo-07.jpg", true, 7],
+      ["Combo 06 + Coca 600ml", "2 cachorros-quentes tradicionais + 1 mistoburguer + Coca-Cola 600ml.", 33.99, "Promoções", "", 0, "", false, "img/promo/promo-08.jpg", true, 8],
+      ["Combo Família", "2 mistoburgueres + 3 cachorros-quentes tradicionais + Coca-Cola 600ml.", 52.99, "Promoções", "", 0, "", false, "img/promo/promo-09.jpg", false, 9],
+      ["Combo Sem Brigas + Coca 1L (Entrega Grátis)", "4 mistoburgueres + 4 cachorros-quentes tradicionais + Coca-Cola. Ganhe a entrega grátis (bairros próximos).", 87.99, "Promoções", "", 0, "", false, "img/promo/promo-10.jpg", false, 10],
+      ["Combo Família Toda Feliz", "1 cachorro-quente tradicional + 1 mistoburguer + 1 pão árabe mix + Coca-Cola 600ml.", 49.99, "Promoções", "", 0, "", false, "img/promo/promo-11.jpg", false, 11],
+      ["Combo Diferenciado", "1 cachorro-quente tradicional + 1 sanduba mistoburguer + 1 pão árabe mix + Coca-Cola 600ml. + R$ 2,50 você leva 1 Marujinho.", 49.99, "Promoções", "", 0, "", false, "img/promo/promo-12.jpg", false, 12],
+      ["4 Mistoburgueres + Coca 600ml", "4 sandubas mistoburguer + Coca-Cola 600ml GRÁTIS.", 55.99, "Promoções", "", 0, "", false, "img/promo/promo-13.jpg", false, 13],
+      ["4 Mistoburgueres + Guaraná 200ml", "Compre 4 mistoburgueres e ganhe 1 Guaraná 200ml GRÁTIS.", 52.99, "Promoções", "", 0, "", false, "img/promo/promo-14.jpg", false, 14],
+      ["3 Mistoburgueres + Coca 600ml", "Na compra de 3 mistoburgueres, ganhe uma Coca-Cola 600ml GRÁTIS.", 43.99, "Promoções", "", 0, "", false, "img/promo/promo-15.jpg", false, 15],
+      ["3 Mistoburgueres + Guaraná 200ml", "Na compra de 3 mistoburgueres, ganhe uma Guaraná Antarctica 200ml (buchudinha) GRÁTIS.", 40.99, "Promoções", "", 0, "", false, "img/promo/promo-16.jpg", false, 16],
+      ["2 Mistoburgueres + Coca 600ml", "2 mistoburgueres + Coca-Cola 600ml.", 31.99, "Promoções", "", 0, "", false, "img/promo/promo-17.jpg", false, 17],
+      ["2 Mistoburgueres + Guaraná 200ml", "2 mistoburgueres + Guaraná 200ml.", 28.99, "Promoções", "", 0, "", false, "img/promo/promo-18.jpg", false, 18],
+      ["2 Mistos + 1 Hot Dog + Coca 600ml", "2 mistoburgueres + 1 cachorro-quente tradicional + Coca-Cola 600ml GRÁTIS.", 38.99, "Promoções", "", 0, "", false, "img/promo/promo-19.jpg", false, 19],
+      ["2 Mistos com Calabresa + Coca 600ml", "2 mistoburgueres com calabresa + Coca-Cola 600ml.", 37.99, "Promoções", "", 0, "", false, "img/promo/promo-20.jpg", false, 20],
+      ["2 Mistos com Calabresa + Guaraná 200ml", "2 mistoburgueres com calabresa + Guaraná 200ml.", 34.99, "Promoções", "", 0, "", false, "img/promo/promo-21.jpg", false, 21],
+      ["Misto com Calabresa + Guaraná 200ml", "1 mistoburguer com calabresa + Guaraná 200ml.", 19.99, "Promoções", "", 0, "", false, "img/promo/promo-22.jpg", false, 22],
+      ["Árabe Mix + Mistoburguer + Guaraná 200ml", "1 pão árabe mix + 1 sanduba mistoburguer + Guaraná 200ml.", 39.99, "Promoções", "", 0, "", false, "img/promo/promo-23.jpg", false, 23],
+      ["Árabe Mix + Hot Dog + Coca 600ml", "1 pão árabe mix + 1 cachorro-quente tradicional + Coca-Cola 600ml.", 37.99, "Promoções", "", 0, "", false, "img/promo/promo-24.jpg", false, 24],
+      ["2 Pães Árabes Mix + Coca 600ml", "2 pães árabes mix + Coca-Cola 600ml. + R$ 2,50 você leva 1 Marujinho.", 53.99, "Promoções", "", 0, "", false, "img/promo/promo-25.jpg", false, 25],
+      ["2 Pães Árabes Mix", "2 pães árabes mix.", 45.99, "Promoções", "", 0, "", false, "img/promo/promo-26.jpg", false, 26],
+      ["Misto + Hot Dog + Coca 250ml", "1 sanduba mistoburguer + 1 cachorro-quente tradicional + Coca-Cola 250ml.", 23.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/206921892_1958276807.jpg", false, 100],
+      ["Misto + Hot Dog + Guaraná 200ml", "1 sanduba mistoburguer + 1 cachorro-quente tradicional + Guaraná 200ml.", 24.0, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1726025094_1032233558.jpg", false, 101],
+      ["Misto + Hot Dog + Guaraná Lata", "1 sanduba mistoburguer + 1 cachorro-quente tradicional + Guaraná lata 350ml.", 24.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1826815241_234381632.jpg", false, 102],
+      ["Combo 06", "2 cachorros-quentes tradicionais + 1 sanduba mistoburguer.", 25.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1094785664_1363472869.jpg", false, 103],
+      ["Combo a Pedidos (sem refri)", "1 cachorro-quente tradicional + 2 sandubas mistoburguer.", 27.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/300563501_1258286003.jpg", false, 104],
+      ["Combo Agora Sim!", "1 sanduba mistoburguer + 1 cachorro-quente tradicional + Guaraná 1 litro.", 29.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2124811695_1780479720.jpg", false, 105],
+      ["X-Calabresa + Hot Dog Calabresa + Coca 600ml", "1 X-Calabresa + 1 cachorro-quente com calabresa ralada + Coca-Cola 600ml.", 33.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1423632203_1725428262.jpg", false, 106],
+      ["2 Mistos + 2 Hot Dogs (sem refri)", "2 sandubas mistoburguer + 2 cachorros-quentes tradicionais.", 34.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1659432862_1525473219.jpg", false, 107],
+      ["2 Hot Dogs + 1 Misto + Guaraná 1L", "2 cachorros-quentes tradicionais + 1 sanduba mistoburguer + Guaraná 1 litro.", 35.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2120318431_175715274.png", false, 108],
+      ["Combo a Pedidos", "1 cachorro-quente tradicional + 2 sandubas mistoburguer + refrigerante.", 37.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1857281459_295101221.png", false, 109],
+      ["Árabe Mix + Misto + Guaraná 1L", "1 pão árabe mix + 1 sanduba mistoburguer + Guaraná 1 litro.", 42.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1478568519_1781130231.jpg", false, 110],
+      ["Mega Combo + Coca 600ml", "2 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Coca-Cola 600ml.", 45.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1336929236_600264814.jpg", false, 111],
+      ["Mega Combo + Guaraná 1L", "2 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Guaraná 1 litro.", 48.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1495031345_989870582.jpg", false, 112],
+      ["Mega Combo + Coca 1L", "2 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Coca-Cola 1 litro.", 49.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2010165311_591204071.jpg", false, 113],
+      ["Combo Família + Coca Lata", "3 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Coca-Cola lata 350ml.", 51.5, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1858912748_782072991.jpg", false, 114],
+      ["Super Combo (sem refri)", "5 cachorros-quentes tradicionais + 2 sandubas mistoburguer.", 54.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/274478844_713090050.jpg", false, 115],
+      ["Combo Família + Guaraná 1L", "3 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Guaraná 1 litro.", 55.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2014278196_1118940655.jpg", true, 116],
+      ["Combo Galera (sem refri)", "4 sandubas mistoburguer + 3 cachorros-quentes tradicionais.", 59.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/501295001_283634363.jpg", false, 117],
+      ["Árabe + Hot Dog de Frango + SanduFrango + Coca 600ml", "1 pão árabe completão + 1 hot dog de frango + 1 SanduFrango + Coca-Cola 600ml.", 59.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1309665374_151567623.png", false, 118],
+      ["Super Combo + Guaraná 1L", "5 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Guaraná 1 litro.", 66.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1776362204_1789691450.jpg", false, 119],
+      ["Combo Amores + Coca 600ml", "3 cachorros-quentes tradicionais + 4 sandubas mistoburguer + Coca-Cola 600ml.", 75.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1064006887_1613357567.png", false, 120],
+      ["Combo Galera + Guaraná 1L", "4 sandubas mistoburguer + 3 cachorros-quentes tradicionais + Guaraná 1 litro.", 76.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1337596046_1302518242.jpg", false, 121],
+      ["Cachorro-Quente Tradicional", "Pão hot, alface, salsicha, molho bolonhesa das meninas, batata palha, maionese e ketchup.", 6.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2116422045_532818125.jpg", true, 122],
+      ["Cachorro-Quente com Cheddar", "Pão hot, alface, salsicha, molho bolonhesa das meninas, cheddar, batata palha, maionese e ketchup.", 7.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1730881015_1863271935.png", false, 123],
+      ["Cachorro-Quente com Barbecue", "Pão, alface, salsicha, molho de carne, batata palha, cheddar e barbecue.", 7.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/768606705_2125680467.jpg", false, 124],
+      ["Cachorro-Quente com Frango", "Pão hot, alface, salsicha, molho bolonhesa das meninas, frango desfiado, maionese e ketchup.", 8.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1565225245_1254632839.jpg", false, 125],
+      ["Cachorro-Quente com Bacon", "Pão, alface, molho de carne, salsicha, bacon picado, maionese e ketchup.", 8.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1301982339_3249778.jpg", false, 126],
+      ["Cachorro-Quente com Calabresa Ralada", "Pão hot, alface, molho bolonhesa das meninas, salsicha, calabresa ralada, maionese e ketchup.", 8.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/993017178_777856077.jpg", false, 127],
+      ["Cachorro-Quente com Cebola Caramelizada", "Pão, salsicha, alface, molho de carne, cebola caramelizada, maionese e ketchup.", 8.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/441468145_445819407.jpg", false, 128],
+      ["Cachorro-Quente Paulista", "Pão hot, salsicha, alface, batata palha, purê de batata, maionese e ketchup.", 8.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/843643726_1793397153.jpg", false, 129],
+      ["Hot Dog no Potão 500g", "Pão, creme de batata, salsicha com molho bolonhesa, requeijão e rodelas de salsicha. Maionese, ketchup e batata palha à parte.", 19.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1789588478_671783795.jpg", false, 130],
+      ["2 Minis Cachorros-Quentes", "2 minis: pão 350g, alface, molho bolonhesa com salsicha em rodelas, batata palha, maionese e ketchup.", 7.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1644459513_289326979.jpg", false, 131],
+      ["4 Minis Cachorros-Quentes", "4 minis: pão 350g, alface, molho bolonhesa com salsicha em rodelas, batata palha, maionese e ketchup.", 15.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1437890291_861598549.jpg", false, 132],
+      ["10 Minis Cachorros-Quentes", "10 minis: pão 350g, alface, molho bolonhesa com salsicha em rodelas, batata palha, maionese e ketchup.", 39.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1374151476_1993214274.jpg", false, 133],
+      ["2 Cachorros-Quentes Tradicionais", "2 unidades: pão hot, alface, salsicha, molho bolonhesa das meninas, batata palha, maionese e ketchup.", 13.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/578538877_2058847508.jpg", false, 134],
+      ["3 Cachorros-Quentes Tradicionais", "3 unidades: pão hot, alface, salsicha, molho bolonhesa das meninas, batata palha, maionese e ketchup.", 21.0, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/66537157_592134949.jpg", false, 135],
+      ["4 Cachorros-Quentes Tradicionais", "4 unidades: pão hot, alface, salsicha, molho bolonhesa das meninas, batata palha, maionese e ketchup.", 25.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/83391495_1044906089.jpg", false, 136],
+      ["6 Cachorros-Quentes Tradicionais", "6 unidades: pão hot, alface, salsicha, molho bolonhesa das meninas, batata palha, maionese e ketchup.", 38.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2089684027_310058291.jpg", false, 137],
+      ["10 Cachorros-Quentes Tradicionais", "10 unidades: pão hot, alface, salsicha, molho bolonhesa das meninas, batata palha, maionese e ketchup.", 64.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1230716568_301366558.jpg", false, 138],
+      ["Sanduba de Frango e Salada", "Pão bola, alface, tomate, queijo, presunto, frango desfiado, maionese e ketchup.", 10.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1746019255_1940837418.jpg", false, 139],
+      ["Sanduba Mistoburguer", "Pão bola, alface, tomate, carne de hambúrguer, queijo, presunto, maionese e ketchup.", 11.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1757346414_360105891.jpg", false, 140],
+      ["Sanduba Mistovo", "Pão bola, alface, tomate, carne de hambúrguer, queijo, presunto, ovo, maionese e ketchup.", 13.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/960984282_1412664860.jpg", false, 141],
+      ["Mistoburguer com Frango", "Pão bola, alface, tomate, queijo, presunto, carne de hambúrguer, frango desfiado, maionese e ketchup.", 14.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/463119636_1178165691.png", false, 142],
+      ["Mistoburguer com Calabresa", "Pão bola assado com ervas finas, alface, tomate, carne de hambúrguer, rodelas de calabresa, queijo, presunto, maionese e ketchup.", 14.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/269806642_384744654.jpg", false, 143],
+      ["Sanduba das Meninas", "Pão bola, carne de hambúrguer, ovo, tomate, alface, cebola caramelizada, queijo, cheddar, maionese e ketchup.", 16.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1691369943_1937628369.jpg", true, 144],
+      ["SanduFrango", "Pão bola, alface, tomate, carne de hambúrguer, ovo, queijo, presunto, frango desfiado, batata palha, maionese e ketchup.", 16.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2020635774_1987614924.jpg", false, 145],
+      ["X-Calabresa", "Pão bola, alface, tomate, carne de hambúrguer, queijo, cebola caramelizada, bacon, calabresa, maionese e ketchup.", 16.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1182693636_604874955.jpg", false, 146],
+      ["X-Bacon", "Pão bola, alface, tomate, carne de hambúrguer, queijo, ovo, cebola caramelizada, cheddar, bacon, maionese e ketchup.", 17.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/94302386_409830500.png", true, 147],
+      ["Sanduba Completão", "Pão bola, alface, tomate, carne de hambúrguer, presunto, queijo, ovo, cebola caramelizada, salsicha, cheddar, maionese e ketchup.", 21.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/953070256_1973324850.jpg", false, 148],
+      ["Sanduba Tudo Que Tenho Direito", "Pão bola, alface, tomate, frango, carne de hambúrguer, ovo, queijo, presunto, calabresa, batata palha, maionese e ketchup.", 22.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/163643997_1872961727.jpg", false, 149],
+      ["Burguer Duplo", "Pão bola, 2 carnes de hambúrguer, alface, tomate, ovo, queijo, cebola caramelizada, cheddar, maionese e ketchup.", 23.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1311803099_1831410610.jpg", false, 150],
+      ["Árabe de Calabresa", "Pão árabe, alface, tomate, carne de hambúrguer, queijo, cebola caramelizada, calabresa, cheddar, maionese e ketchup.", 20.99, "Pão Árabe", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1381977002_561522813.jpg", false, 151],
+      ["Pão Árabe Mix", "Pão árabe, alface, tomate, carne de hambúrguer, presunto, queijo, ovo, cebola caramelizada, calabresa, cheddar, maionese e ketchup.", 22.99, "Pão Árabe", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1463733520_1440986706.jpg", false, 152],
+      ["Pão Árabe Completão", "Pão árabe, alface, tomate, carne de hambúrguer, queijo, presunto, ovo, calabresa, frango desfiado, cebola caramelizada, cheddar, maionese e ketchup.", 25.99, "Pão Árabe", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1256503703_1208265183.jpg", true, 153],
+      ["Pão Árabe Mix com Bacon", "Pão árabe, alface, tomate, carne de hambúrguer, presunto, queijo, ovo, cebola caramelizada, calabresa, bacon, cheddar, maionese e ketchup.", 27.99, "Pão Árabe", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/606782127_133324701.jpg", false, 154],
+      ["Árabe Especial das Meninas", "Pão árabe, alface, tomate, cebola caramelizada, carne de hambúrguer, presunto, queijo, ovo, salsicha, bacon, calabresa, cheddar, maionese e ketchup.", 29.99, "Pão Árabe", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1821131184_2101876981.jpg", true, 155],
+      ["Hot Dog + Guaraná 200ml", "1 cachorro-quente tradicional + Guaraná 200ml.", 11.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/552640363_1870569916.png", false, 156],
+      ["2 Minis Hot Dogs + Guaraná 200ml", "2 minis cachorros-quentes + Guaraná 200ml.", 12.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1266421707_903057065.jpg", false, 157],
+      ["Hot Dog Calabresa + Guaraná 200ml", "1 cachorro-quente com calabresa ralada + Guaraná 200ml.", 13.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1277574820_105390417.png", false, 158],
+      ["Misto + Guaraná 200ml", "1 sanduba mistoburguer + Guaraná 200ml.", 16.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/20692951_1285493137.jpg", false, 159],
+      ["Misto + Guaraná Lata", "1 sanduba mistoburguer + Guaraná lata 350ml.", 18.5, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/v2/produtos/590275042_1927364192.jpg", false, 160],
+      ["Combo Estudante", "2 cachorros-quentes tradicionais + Guaraná 200ml.", 18.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/784098401_1276571995.jpg", false, 161],
+      ["2 Hot Dogs + Coca 250ml", "2 cachorros-quentes tradicionais + Coca-Cola 250ml.", 19.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/524982639_1584351234.png", false, 162],
+      ["2 Hot Dogs + Coca 600ml", "2 cachorros-quentes tradicionais + Coca-Cola 600ml.", 21.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/272655419_742541568.png", false, 163],
+      ["Sanduba das Meninas + Guaraná 200ml", "Sanduba das Meninas + Guaraná 200ml.", 22.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/347318371_171973801.png", false, 164],
+      ["4 Minis Hot Dogs + Coca 600ml", "4 minis cachorros-quentes + Coca-Cola 600ml.", 23.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1702540608_2071542411.jpg", false, 165],
+      ["Combo Cachorros", "2 cachorros-quentes tradicionais + Guaraná 1 litro.", 23.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/909598098_1525255093.png", false, 166],
+      ["Combo Solteir@", "1 pão árabe de calabresa + Guaraná 200ml.", 25.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/440632780_1490864070.jpg", false, 167],
+      ["X-Bacon + Coca 600ml", "1 X-Bacon + Coca-Cola 600ml.", 25.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/165082915_1226061849.jpg", false, 168],
+      ["Pão Árabe Mix + Guaraná 200ml", "1 pão árabe mix + Guaraná 200ml.", 27.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/642741702_979168742.png", false, 169],
+      ["2 Mistos + Coca Lata", "2 sandubas mistoburguer + Coca-Cola lata 350ml.", 27.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1056818668_1270470434.jpg", false, 170],
+      ["Tudo Que Tenho Direito + Coca 250ml", "Sanduba Tudo Que Tenho Direito + Coca-Cola 250ml.", 27.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1781291203_769626042.jpg", false, 171],
+      ["2 Mistos + Coca 250ml", "2 sandubas mistoburguer + Coca-Cola 250ml.", 28.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1031545322_1342648595.jpg", false, 172],
+      ["2 Mistos + Coca 600ml", "2 sandubas mistoburguer + Coca-Cola 600ml.", 29.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/121784699_56276823.png", false, 173],
+      ["2 Mistos + Guaraná 1L", "2 sandubas mistoburguer + Guaraná 1 litro.", 30.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1045446827_8729495.jpg", false, 174],
+      ["4 Hot Dogs + Guaraná 200ml", "4 cachorros-quentes tradicionais + Guaraná 200ml.", 30.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/616067082_1835644278.jpg", false, 175],
+      ["Árabe Completão + Guaraná 200ml", "1 pão árabe completão + Guaraná 200ml.", 30.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1352461761_1009972524.jpg", false, 176],
+      ["2 Mistos + Guaraná 600ml", "2 sandubas mistoburguer + Guaraná 600ml.", 31.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/487847030_805493802.jpg", false, 177],
+      ["4 Hot Dogs + Coca 250ml", "4 cachorros-quentes tradicionais + Coca-Cola 250ml.", 31.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1708120598_1924549379.jpg", false, 178],
+      ["Árabe Completão + Coca 250ml", "1 pão árabe completão + Coca-Cola 250ml.", 31.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1028336382_807670281.png", false, 179],
+      ["4 Hot Dogs + Guaraná Lata", "4 cachorros-quentes tradicionais + Guaraná lata 350ml.", 32.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/225704018_1258182085.jpg", false, 180],
+      ["4 Hot Dogs + Coca 600ml", "4 cachorros-quentes tradicionais + Coca-Cola 600ml.", 33.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/509040156_1143421464.jpg", false, 181],
+      ["4 Hot Dogs + Guaraná 1L", "4 cachorros-quentes tradicionais + Guaraná 1 litro.", 35.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1967499879_1032019619.jpg", false, 182],
+      ["Árabe Especial + Coca 250ml", "Árabe Especial das Meninas + Coca-Cola 250ml.", 35.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/255297160_1884261207.jpg", false, 183],
+      ["3 Mistos + Coca 250ml", "3 sandubas mistoburguer + Coca-Cola 250ml.", 40.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1088917512_439502317.jpg", false, 184],
+      ["2 Mistos com Calabresa + Guaraná 1L", "2 mistoburgueres com calabresa + Guaraná 1 litro.", 41.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1782439779_796865176.jpg", false, 185],
+      ["Combo Criançada", "5 cachorros-quentes tradicionais + Guaraná 1 litro.", 41.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1367804404_1044003364.png", false, 186],
+      ["Combo X-Bacon", "2 X-Bacon + refrigerante 1 litro.", 45.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1868935581_1644901220.jpg", false, 187],
+      ["Combo Adolescente", "6 cachorros-quentes tradicionais + Guaraná 1 litro.", 48.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/936811947_1019117104.jpg", false, 188],
+      ["4 Mistos + Coca Lata", "4 sandubas mistoburguer + Coca-Cola lata 350ml.", 50.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1561781255_1197628616.jpg", false, 189],
+      ["4 Mistos + Guaraná 1L", "4 sandubas mistoburguer + Guaraná 1 litro.", 53.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/254569589_1712413794.jpg", false, 190],
+      ["Combo Árabes", "2 pães árabes mix + Guaraná 1 litro.", 56.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/550494487_1759354970.jpg", false, 191],
+      ["10 Hot Dogs + Guaraná 200ml", "10 cachorros-quentes tradicionais + Guaraná 200ml.", 74.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/530391988_312775924.jpg", false, 192],
+      ["Combo Apaixonad@s por Hot Dog", "10 cachorros-quentes tradicionais + Guaraná 1 litro.", 74.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1853198961_2105744330.jpg", false, 193],
+      ["Combo Xonad@s por Hot e Coca", "10 cachorros-quentes tradicionais + Coca-Cola 1 litro.", 75.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1323447183_1299493196.jpg", false, 194],
+      ["Água Mineral 500ml", "", 3.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/595653060_964773340.jpg", false, 195],
+      ["Água com Gás 500ml", "", 4.8, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1917878058_1102363176.jpg", false, 196],
+      ["Guaraná Antarctica 200ml", "", 5.1, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1003703188_1182996216.jpg", false, 197],
+      ["Fanta Laranja 250ml", "", 5.59, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1895508696_1587325679.jpg", false, 198],
+      ["Coca-Cola 250ml", "", 5.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1586145186_2001772320.jpg", false, 199],
+      ["Coca-Cola Lata 350ml", "", 6.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1917270037_639142135.jpg", false, 200],
+      ["Guaraná Lata 350ml", "", 6.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1744383895_267508395.jpg", false, 201],
+      ["Coca-Cola 600ml", "", 7.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/194889609_582972869.jpg", false, 202],
+      ["Guaraná 600ml", "", 7.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/370127214_221797092.jpg", false, 203],
+      ["Del Valle Frutas Cítricas 450ml", "", 7.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/794502313_912599405.jpg", false, 204],
+      ["Coca-Cola 600ml Sem Açúcar", "", 8.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1501192783_1520254338.jpg", false, 205],
+      ["Guaraná Antarctica 1L", "", 10.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/205365_931464425.jpg", false, 206],
+      ["Coca-Cola 1L", "", 11.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/201987907_549583292.jpg", false, 207],
+      ["Coca-Cola 2L", "", 18.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1142187300_1560872584.jpg", false, 208],
+      ["Marujinho Açaí", "", 2.5, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/335995188_445979852.jpg", false, 209],
+      ["Marujinho Cajá", "", 2.5, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/882184320_1883590039.jpg", false, 210],
+      ["Marujinho Chocolate", "", 2.5, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1751436419_1448408008.jpg", false, 211],
+      ["Marujinho Leite Condensado", "", 2.5, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/184739001_507002917.jpg", false, 212],
+      ["Marujinho Morango", "", 2.5, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2010982709_138634855.jpg", false, 213],
+      ["Sonho de Valsa", "", 2.5, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/93407436_827759106.jpg", false, 214],
+      ["Doce de Goiaba Julieta 250g", "", 6.99, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/53721604_1919338084.jpg", false, 215],
+      ["Nutella 140g", "", 14.99, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/221041403_1138862431.jpg", false, 216],
+      ["Bom da Festa Brigadeiro", "", 15.99, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/523766026_2060229785.jpg", false, 217]
     ];
     aba_('Produtos').getRange(2, 1, prod.length, ABAS.Produtos.length).setValues(prod.map(function (x) {
       return [novoId_(), x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], true, false, x[9], x[10], '', '', x[5] > 0 && !/porção/i.test(x[0]), x[0] === 'Porção de proteína' ? 12 : ''];
@@ -297,6 +440,23 @@ function taxaBairro_(cfg, bairro) {
   const x = bs.filter(function (y) { return norm_(y.nome) === b; })[0];
   return x ? { ok: true, taxa: num_(x.taxa), nome: x.nome } : { ok: false };
 }
+// Acréscimo na taxa de entrega de madrugada (ex.: +R$ 2 depois da meia-noite)
+function acrescimoNoite_(cfg, hm) {
+  const a = cfg.entrega && cfg.entrega.acrescimo_noite;
+  if (!a || !num_(a.valor)) return 0;
+  const m = min_(hm), i = min_(a.inicio || '00:00'), f = min_(a.fim || '05:00');
+  const dentro = i <= f ? (m >= i && m < f) : (m >= i || m < f);
+  return dentro ? num_(a.valor) : 0;
+}
+// Combo com "Entrega Grátis" no nome: zera a taxa nos bairros próximos (taxa até o limite)
+function entregaGratis_(cfg, itens, bairro) {
+  const g = cfg.entrega && cfg.entrega.gratis_combo;
+  if (!g || !sim_(g.ativo, false)) return false;
+  const tem = itens.some(function (x) { return norm_(x.nome).indexOf(norm_(g.palavra || 'entrega gratis')) >= 0; });
+  if (!tem) return false;
+  const tb = taxaBairro_(cfg, bairro);
+  return tb.ok && tb.taxa <= num_(g.ate || 0);
+}
 function norm_(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
 
 function criarPedido_(p, manual) {
@@ -333,7 +493,7 @@ function criarPedido_(p, manual) {
     if (endereco.length < 5) return erro('Informe o endereço de entrega.');
     const tb = taxaBairro_(cfg, p.bairro);
     if (!tb.ok) return erro('Escolha o bairro da entrega.');
-    taxa = manual && p.taxa !== undefined && p.taxa !== '' ? Math.max(0, num_(p.taxa)) : tb.taxa;
+    taxa = manual && p.taxa !== undefined && p.taxa !== '' ? Math.max(0, num_(p.taxa)) : tb.taxa + acrescimoNoite_(cfg, h.hm);
   } else if (tipo === 'retirada') {
     if (!manual && !sim_(cfg.retirada, true)) return erro('Retirada indisponível.'); endereco = '';
   } else if (tipo === 'local') {
@@ -380,6 +540,7 @@ function criarPedido_(p, manual) {
     if (pr.conta_limite) lim += qtd;
   }
   if (!itens.length) return erro('Seu carrinho está vazio.');
+  if (tipo === 'entrega' && !manual && entregaGratis_(cfg, itens, p.bairro)) taxa = 0;
 
   const doDia = pedidosDoDia_(h.dia);
   if (cfg.limite && sim_(cfg.limite.ativo, false) && lim > 0) {
@@ -894,7 +1055,102 @@ function comTrava_(fn) {
 }
 function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 
+/* =====================================================================
+   TAXAS DE ENTREGA — Express Delivery (Paracuru)
+   Rode UMA VEZ: escolha "cadastrarBairros" no topo e clique em Executar.
+   Depois disso dá pra editar tudo pelo painel (Ajustes → Entrega).
+   ===================================================================== */
+function cadastrarBairros() {
+  const bairros = [
+    { nome: "Alagadiço", taxa: 6 },
+    { nome: "Atlântico", taxa: 7 },
+    { nome: "Atlântico (depois da Fyber)", taxa: 7 },
+    { nome: "Boi Morto", taxa: 10 },
+    { nome: "Boca do Poço", taxa: 6 },
+    { nome: "Cabra Morta", taxa: 10 },
+    { nome: "Campo de Aviação", taxa: 6 },
+    { nome: "Campo de Semente 1", taxa: 8 },
+    { nome: "Campo de Semente 2", taxa: 12 },
+    { nome: "Carrasco", taxa: 8 },
+    { nome: "Carlotas 1", taxa: 6 },
+    { nome: "Carlotas 2", taxa: 6 },
+    { nome: "Conjunto Nova Esperança", taxa: 6 },
+    { nome: "Coreia", taxa: 6 },
+    { nome: "CCF", taxa: 6 },
+    { nome: "Flexeiras", taxa: 12 },
+    { nome: "Lagoa", taxa: 6 },
+    { nome: "Maleitas", taxa: 6 },
+    { nome: "Mango Village 1", taxa: 22 },
+    { nome: "Mango Village 2", taxa: 25 },
+    { nome: "Mango Village 3", taxa: 27 },
+    { nome: "Mocó", taxa: 8 },
+    { nome: "Muriti dos Carlos", taxa: 15 },
+    { nome: "Novo Paracuru", taxa: 7 },
+    { nome: "Paracuru Ville", taxa: 6 },
+    { nome: "Paracuru Beach", taxa: 6 },
+    { nome: "Lagoa do Giral", taxa: 12 },
+    { nome: "Planalto da Barra", taxa: 10 },
+    { nome: "Pedra Rachada", taxa: 35 },
+    { nome: "Portelinha", taxa: 6 },
+    { nome: "Poço Doce", taxa: 30 },
+    { nome: "Paraipaba", taxa: 40 },
+    { nome: "Maleitas (depois do Posto do Hulk)", taxa: 7 },
+    { nome: "São Pedro de Baixo", taxa: 22 },
+    { nome: "São Pedro de Cima", taxa: 27 },
+    { nome: "Sítio Inglês", taxa: 13 },
+    { nome: "Torre", taxa: 6 },
+    { nome: "Vila da Prefeitura", taxa: 6 },
+    { nome: "Vila São José", taxa: 6 },
+    { nome: "Cacimbão", taxa: 20 },
+    { nome: "Vela Branca", taxa: 40 },
+    { nome: "Jardim Recanto (na pista)", taxa: 20 },
+    { nome: "Jardim de Baixo", taxa: 25 },
+    { nome: "Jardim de Cima", taxa: 35 },
+    { nome: "Barroso", taxa: 45 },
+    { nome: "Jardim do Meio", taxa: 26 },
+    { nome: "Guajiru", taxa: 40 },
+    { nome: "Quatro Bocas", taxa: 40 },
+    { nome: "Barracas (na praia)", taxa: 8 },
+    { nome: "Orla", taxa: 7 },
+    { nome: "Centro", taxa: 6 },
+    { nome: "Riacho Doce", taxa: 7 }
+  ];
+  const p = PropertiesService.getScriptProperties();
+  const cfg = JSON.parse(p.getProperty('config') || '{}');
+  cfg.entrega = cfg.entrega || {};
+  cfg.entrega.ativo = true;
+  cfg.entrega.bairros = bairros;
+  cfg.entrega.acrescimo_noite = { valor: 2, inicio: '23:30', fim: '05:00' };   // +R$ 2 das 23h30 às 5h
+  p.setProperty('config', JSON.stringify(cfg));
+  limparCache_(); subirVersao_();
+  Logger.log('Pronto! ' + bairros.length + ' bairros cadastrados.');
+}
 
+/* =====================================================================
+   ATUALIZAR TUDO — cardápio completo (Mais Delivery + 26 promoções),
+   bairros/taxas e regras de entrega.
+   Rode UMA VEZ: escolha "atualizarTudo" no topo e clique em Executar.
+   ATENÇÃO: substitui TODOS os produtos da planilha por esta lista.
+   ===================================================================== */
+function atualizarTudo() {
+  cadastrarBairros();
+  atualizarCardapio();
+}
+function atualizarCardapio() {
+  const prod = [["5 Hot Dogs + Guaraná 600ml", "5 cachorros-quentes tradicionais + Guaraná Antarctica 600ml GRÁTIS. De R$ 44,00 por R$ 41,99.", 41.99, "Promoções", "", 0, "", false, "img/promo/promo-01.jpg", true, 1], ["5 Hot Dogs + Coca 600ml", "5 cachorros-quentes tradicionais + Coca-Cola 600ml GRÁTIS. De R$ 44,00 por R$ 42,99.", 42.99, "Promoções", "", 0, "", false, "img/promo/promo-02.jpg", true, 2], ["3 Hot Dogs + Coca 600ml", "3 cachorros-quentes tradicionais + Coca-Cola 600ml.", 28.99, "Promoções", "", 0, "", false, "img/promo/promo-03.jpg", true, 3], ["2 Hot Dogs + Coca 250ml", "2 cachorros-quentes tradicionais + Coca-Cola 250ml.", 19.5, "Promoções", "", 0, "", false, "img/promo/promo-04.jpg", true, 4], ["2 Hot Dogs + 2 Mistos + Guaraná 200ml", "2 cachorros-quentes tradicionais + 2 mistoburgueres + Guaraná 200ml GRÁTIS.", 42.99, "Promoções", "", 0, "", false, "img/promo/promo-05.jpg", true, 5], ["Mega Combo + Guaraná 200ml", "2 mistoburgueres + 2 cachorros-quentes tradicionais + Guaraná pet 200ml.", 42.99, "Promoções", "", 0, "", false, "img/promo/promo-06.jpg", true, 6], ["Combo 06 + Refri 200ml Grátis", "2 cachorros-quentes tradicionais + 1 mistoburguer + refrigerante 200ml GRÁTIS.", 30.99, "Promoções", "", 0, "", false, "img/promo/promo-07.jpg", true, 7], ["Combo 06 + Coca 600ml", "2 cachorros-quentes tradicionais + 1 mistoburguer + Coca-Cola 600ml.", 33.99, "Promoções", "", 0, "", false, "img/promo/promo-08.jpg", true, 8], ["Combo Família", "2 mistoburgueres + 3 cachorros-quentes tradicionais + Coca-Cola 600ml.", 52.99, "Promoções", "", 0, "", false, "img/promo/promo-09.jpg", false, 9], ["Combo Sem Brigas + Coca 1L (Entrega Grátis)", "4 mistoburgueres + 4 cachorros-quentes tradicionais + Coca-Cola. Ganhe a entrega grátis (bairros próximos).", 87.99, "Promoções", "", 0, "", false, "img/promo/promo-10.jpg", false, 10], ["Combo Família Toda Feliz", "1 cachorro-quente tradicional + 1 mistoburguer + 1 pão árabe mix + Coca-Cola 600ml.", 49.99, "Promoções", "", 0, "", false, "img/promo/promo-11.jpg", false, 11], ["Combo Diferenciado", "1 cachorro-quente tradicional + 1 sanduba mistoburguer + 1 pão árabe mix + Coca-Cola 600ml. + R$ 2,50 você leva 1 Marujinho.", 49.99, "Promoções", "", 0, "", false, "img/promo/promo-12.jpg", false, 12], ["4 Mistoburgueres + Coca 600ml", "4 sandubas mistoburguer + Coca-Cola 600ml GRÁTIS.", 55.99, "Promoções", "", 0, "", false, "img/promo/promo-13.jpg", false, 13], ["4 Mistoburgueres + Guaraná 200ml", "Compre 4 mistoburgueres e ganhe 1 Guaraná 200ml GRÁTIS.", 52.99, "Promoções", "", 0, "", false, "img/promo/promo-14.jpg", false, 14], ["3 Mistoburgueres + Coca 600ml", "Na compra de 3 mistoburgueres, ganhe uma Coca-Cola 600ml GRÁTIS.", 43.99, "Promoções", "", 0, "", false, "img/promo/promo-15.jpg", false, 15], ["3 Mistoburgueres + Guaraná 200ml", "Na compra de 3 mistoburgueres, ganhe uma Guaraná Antarctica 200ml (buchudinha) GRÁTIS.", 40.99, "Promoções", "", 0, "", false, "img/promo/promo-16.jpg", false, 16], ["2 Mistoburgueres + Coca 600ml", "2 mistoburgueres + Coca-Cola 600ml.", 31.99, "Promoções", "", 0, "", false, "img/promo/promo-17.jpg", false, 17], ["2 Mistoburgueres + Guaraná 200ml", "2 mistoburgueres + Guaraná 200ml.", 28.99, "Promoções", "", 0, "", false, "img/promo/promo-18.jpg", false, 18], ["2 Mistos + 1 Hot Dog + Coca 600ml", "2 mistoburgueres + 1 cachorro-quente tradicional + Coca-Cola 600ml GRÁTIS.", 38.99, "Promoções", "", 0, "", false, "img/promo/promo-19.jpg", false, 19], ["2 Mistos com Calabresa + Coca 600ml", "2 mistoburgueres com calabresa + Coca-Cola 600ml.", 37.99, "Promoções", "", 0, "", false, "img/promo/promo-20.jpg", false, 20], ["2 Mistos com Calabresa + Guaraná 200ml", "2 mistoburgueres com calabresa + Guaraná 200ml.", 34.99, "Promoções", "", 0, "", false, "img/promo/promo-21.jpg", false, 21], ["Misto com Calabresa + Guaraná 200ml", "1 mistoburguer com calabresa + Guaraná 200ml.", 19.99, "Promoções", "", 0, "", false, "img/promo/promo-22.jpg", false, 22], ["Árabe Mix + Mistoburguer + Guaraná 200ml", "1 pão árabe mix + 1 sanduba mistoburguer + Guaraná 200ml.", 39.99, "Promoções", "", 0, "", false, "img/promo/promo-23.jpg", false, 23], ["Árabe Mix + Hot Dog + Coca 600ml", "1 pão árabe mix + 1 cachorro-quente tradicional + Coca-Cola 600ml.", 37.99, "Promoções", "", 0, "", false, "img/promo/promo-24.jpg", false, 24], ["2 Pães Árabes Mix + Coca 600ml", "2 pães árabes mix + Coca-Cola 600ml. + R$ 2,50 você leva 1 Marujinho.", 53.99, "Promoções", "", 0, "", false, "img/promo/promo-25.jpg", false, 25], ["2 Pães Árabes Mix", "2 pães árabes mix.", 45.99, "Promoções", "", 0, "", false, "img/promo/promo-26.jpg", false, 26], ["Misto + Hot Dog + Coca 250ml", "1 sanduba mistoburguer + 1 cachorro-quente tradicional + Coca-Cola 250ml.", 23.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/206921892_1958276807.jpg", false, 100], ["Misto + Hot Dog + Guaraná 200ml", "1 sanduba mistoburguer + 1 cachorro-quente tradicional + Guaraná 200ml.", 24.0, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1726025094_1032233558.jpg", false, 101], ["Misto + Hot Dog + Guaraná Lata", "1 sanduba mistoburguer + 1 cachorro-quente tradicional + Guaraná lata 350ml.", 24.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1826815241_234381632.jpg", false, 102], ["Combo 06", "2 cachorros-quentes tradicionais + 1 sanduba mistoburguer.", 25.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1094785664_1363472869.jpg", false, 103], ["Combo a Pedidos (sem refri)", "1 cachorro-quente tradicional + 2 sandubas mistoburguer.", 27.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/300563501_1258286003.jpg", false, 104], ["Combo Agora Sim!", "1 sanduba mistoburguer + 1 cachorro-quente tradicional + Guaraná 1 litro.", 29.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2124811695_1780479720.jpg", false, 105], ["X-Calabresa + Hot Dog Calabresa + Coca 600ml", "1 X-Calabresa + 1 cachorro-quente com calabresa ralada + Coca-Cola 600ml.", 33.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1423632203_1725428262.jpg", false, 106], ["2 Mistos + 2 Hot Dogs (sem refri)", "2 sandubas mistoburguer + 2 cachorros-quentes tradicionais.", 34.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1659432862_1525473219.jpg", false, 107], ["2 Hot Dogs + 1 Misto + Guaraná 1L", "2 cachorros-quentes tradicionais + 1 sanduba mistoburguer + Guaraná 1 litro.", 35.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2120318431_175715274.png", false, 108], ["Combo a Pedidos", "1 cachorro-quente tradicional + 2 sandubas mistoburguer + refrigerante.", 37.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1857281459_295101221.png", false, 109], ["Árabe Mix + Misto + Guaraná 1L", "1 pão árabe mix + 1 sanduba mistoburguer + Guaraná 1 litro.", 42.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1478568519_1781130231.jpg", false, 110], ["Mega Combo + Coca 600ml", "2 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Coca-Cola 600ml.", 45.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1336929236_600264814.jpg", false, 111], ["Mega Combo + Guaraná 1L", "2 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Guaraná 1 litro.", 48.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1495031345_989870582.jpg", false, 112], ["Mega Combo + Coca 1L", "2 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Coca-Cola 1 litro.", 49.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2010165311_591204071.jpg", false, 113], ["Combo Família + Coca Lata", "3 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Coca-Cola lata 350ml.", 51.5, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1858912748_782072991.jpg", false, 114], ["Super Combo (sem refri)", "5 cachorros-quentes tradicionais + 2 sandubas mistoburguer.", 54.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/274478844_713090050.jpg", false, 115], ["Combo Família + Guaraná 1L", "3 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Guaraná 1 litro.", 55.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2014278196_1118940655.jpg", true, 116], ["Combo Galera (sem refri)", "4 sandubas mistoburguer + 3 cachorros-quentes tradicionais.", 59.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/501295001_283634363.jpg", false, 117], ["Árabe + Hot Dog de Frango + SanduFrango + Coca 600ml", "1 pão árabe completão + 1 hot dog de frango + 1 SanduFrango + Coca-Cola 600ml.", 59.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1309665374_151567623.png", false, 118], ["Super Combo + Guaraná 1L", "5 cachorros-quentes tradicionais + 2 sandubas mistoburguer + Guaraná 1 litro.", 66.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1776362204_1789691450.jpg", false, 119], ["Combo Amores + Coca 600ml", "3 cachorros-quentes tradicionais + 4 sandubas mistoburguer + Coca-Cola 600ml.", 75.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1064006887_1613357567.png", false, 120], ["Combo Galera + Guaraná 1L", "4 sandubas mistoburguer + 3 cachorros-quentes tradicionais + Guaraná 1 litro.", 76.99, "Combos", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1337596046_1302518242.jpg", false, 121], ["Cachorro-Quente Tradicional", "Pão hot, alface, salsicha, molho bolonhesa das meninas, batata palha, maionese e ketchup.", 6.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2116422045_532818125.jpg", true, 122], ["Cachorro-Quente com Cheddar", "Pão hot, alface, salsicha, molho bolonhesa das meninas, cheddar, batata palha, maionese e ketchup.", 7.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1730881015_1863271935.png", false, 123], ["Cachorro-Quente com Barbecue", "Pão, alface, salsicha, molho de carne, batata palha, cheddar e barbecue.", 7.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/768606705_2125680467.jpg", false, 124], ["Cachorro-Quente com Frango", "Pão hot, alface, salsicha, molho bolonhesa das meninas, frango desfiado, maionese e ketchup.", 8.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1565225245_1254632839.jpg", false, 125], ["Cachorro-Quente com Bacon", "Pão, alface, molho de carne, salsicha, bacon picado, maionese e ketchup.", 8.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1301982339_3249778.jpg", false, 126], ["Cachorro-Quente com Calabresa Ralada", "Pão hot, alface, molho bolonhesa das meninas, salsicha, calabresa ralada, maionese e ketchup.", 8.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/993017178_777856077.jpg", false, 127], ["Cachorro-Quente com Cebola Caramelizada", "Pão, salsicha, alface, molho de carne, cebola caramelizada, maionese e ketchup.", 8.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/441468145_445819407.jpg", false, 128], ["Cachorro-Quente Paulista", "Pão hot, salsicha, alface, batata palha, purê de batata, maionese e ketchup.", 8.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/843643726_1793397153.jpg", false, 129], ["Hot Dog no Potão 500g", "Pão, creme de batata, salsicha com molho bolonhesa, requeijão e rodelas de salsicha. Maionese, ketchup e batata palha à parte.", 19.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1789588478_671783795.jpg", false, 130], ["2 Minis Cachorros-Quentes", "2 minis: pão 350g, alface, molho bolonhesa com salsicha em rodelas, batata palha, maionese e ketchup.", 7.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1644459513_289326979.jpg", false, 131], ["4 Minis Cachorros-Quentes", "4 minis: pão 350g, alface, molho bolonhesa com salsicha em rodelas, batata palha, maionese e ketchup.", 15.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1437890291_861598549.jpg", false, 132], ["10 Minis Cachorros-Quentes", "10 minis: pão 350g, alface, molho bolonhesa com salsicha em rodelas, batata palha, maionese e ketchup.", 39.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1374151476_1993214274.jpg", false, 133], ["2 Cachorros-Quentes Tradicionais", "2 unidades: pão hot, alface, salsicha, molho bolonhesa das meninas, batata palha, maionese e ketchup.", 13.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/578538877_2058847508.jpg", false, 134], ["3 Cachorros-Quentes Tradicionais", "3 unidades: pão hot, alface, salsicha, molho bolonhesa das meninas, batata palha, maionese e ketchup.", 21.0, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/66537157_592134949.jpg", false, 135], ["4 Cachorros-Quentes Tradicionais", "4 unidades: pão hot, alface, salsicha, molho bolonhesa das meninas, batata palha, maionese e ketchup.", 25.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/83391495_1044906089.jpg", false, 136], ["6 Cachorros-Quentes Tradicionais", "6 unidades: pão hot, alface, salsicha, molho bolonhesa das meninas, batata palha, maionese e ketchup.", 38.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2089684027_310058291.jpg", false, 137], ["10 Cachorros-Quentes Tradicionais", "10 unidades: pão hot, alface, salsicha, molho bolonhesa das meninas, batata palha, maionese e ketchup.", 64.99, "Cachorro-Quente", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1230716568_301366558.jpg", false, 138], ["Sanduba de Frango e Salada", "Pão bola, alface, tomate, queijo, presunto, frango desfiado, maionese e ketchup.", 10.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1746019255_1940837418.jpg", false, 139], ["Sanduba Mistoburguer", "Pão bola, alface, tomate, carne de hambúrguer, queijo, presunto, maionese e ketchup.", 11.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1757346414_360105891.jpg", false, 140], ["Sanduba Mistovo", "Pão bola, alface, tomate, carne de hambúrguer, queijo, presunto, ovo, maionese e ketchup.", 13.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/960984282_1412664860.jpg", false, 141], ["Mistoburguer com Frango", "Pão bola, alface, tomate, queijo, presunto, carne de hambúrguer, frango desfiado, maionese e ketchup.", 14.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/463119636_1178165691.png", false, 142], ["Mistoburguer com Calabresa", "Pão bola assado com ervas finas, alface, tomate, carne de hambúrguer, rodelas de calabresa, queijo, presunto, maionese e ketchup.", 14.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/269806642_384744654.jpg", false, 143], ["Sanduba das Meninas", "Pão bola, carne de hambúrguer, ovo, tomate, alface, cebola caramelizada, queijo, cheddar, maionese e ketchup.", 16.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1691369943_1937628369.jpg", true, 144], ["SanduFrango", "Pão bola, alface, tomate, carne de hambúrguer, ovo, queijo, presunto, frango desfiado, batata palha, maionese e ketchup.", 16.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2020635774_1987614924.jpg", false, 145], ["X-Calabresa", "Pão bola, alface, tomate, carne de hambúrguer, queijo, cebola caramelizada, bacon, calabresa, maionese e ketchup.", 16.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1182693636_604874955.jpg", false, 146], ["X-Bacon", "Pão bola, alface, tomate, carne de hambúrguer, queijo, ovo, cebola caramelizada, cheddar, bacon, maionese e ketchup.", 17.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/94302386_409830500.png", true, 147], ["Sanduba Completão", "Pão bola, alface, tomate, carne de hambúrguer, presunto, queijo, ovo, cebola caramelizada, salsicha, cheddar, maionese e ketchup.", 21.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/953070256_1973324850.jpg", false, 148], ["Sanduba Tudo Que Tenho Direito", "Pão bola, alface, tomate, frango, carne de hambúrguer, ovo, queijo, presunto, calabresa, batata palha, maionese e ketchup.", 22.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/163643997_1872961727.jpg", false, 149], ["Burguer Duplo", "Pão bola, 2 carnes de hambúrguer, alface, tomate, ovo, queijo, cebola caramelizada, cheddar, maionese e ketchup.", 23.99, "Sandubas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1311803099_1831410610.jpg", false, 150], ["Árabe de Calabresa", "Pão árabe, alface, tomate, carne de hambúrguer, queijo, cebola caramelizada, calabresa, cheddar, maionese e ketchup.", 20.99, "Pão Árabe", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1381977002_561522813.jpg", false, 151], ["Pão Árabe Mix", "Pão árabe, alface, tomate, carne de hambúrguer, presunto, queijo, ovo, cebola caramelizada, calabresa, cheddar, maionese e ketchup.", 22.99, "Pão Árabe", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1463733520_1440986706.jpg", false, 152], ["Pão Árabe Completão", "Pão árabe, alface, tomate, carne de hambúrguer, queijo, presunto, ovo, calabresa, frango desfiado, cebola caramelizada, cheddar, maionese e ketchup.", 25.99, "Pão Árabe", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1256503703_1208265183.jpg", true, 153], ["Pão Árabe Mix com Bacon", "Pão árabe, alface, tomate, carne de hambúrguer, presunto, queijo, ovo, cebola caramelizada, calabresa, bacon, cheddar, maionese e ketchup.", 27.99, "Pão Árabe", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/606782127_133324701.jpg", false, 154], ["Árabe Especial das Meninas", "Pão árabe, alface, tomate, cebola caramelizada, carne de hambúrguer, presunto, queijo, ovo, salsicha, bacon, calabresa, cheddar, maionese e ketchup.", 29.99, "Pão Árabe", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1821131184_2101876981.jpg", true, 155], ["Hot Dog + Guaraná 200ml", "1 cachorro-quente tradicional + Guaraná 200ml.", 11.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/552640363_1870569916.png", false, 156], ["2 Minis Hot Dogs + Guaraná 200ml", "2 minis cachorros-quentes + Guaraná 200ml.", 12.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1266421707_903057065.jpg", false, 157], ["Hot Dog Calabresa + Guaraná 200ml", "1 cachorro-quente com calabresa ralada + Guaraná 200ml.", 13.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1277574820_105390417.png", false, 158], ["Misto + Guaraná 200ml", "1 sanduba mistoburguer + Guaraná 200ml.", 16.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/20692951_1285493137.jpg", false, 159], ["Misto + Guaraná Lata", "1 sanduba mistoburguer + Guaraná lata 350ml.", 18.5, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/v2/produtos/590275042_1927364192.jpg", false, 160], ["Combo Estudante", "2 cachorros-quentes tradicionais + Guaraná 200ml.", 18.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/784098401_1276571995.jpg", false, 161], ["2 Hot Dogs + Coca 250ml", "2 cachorros-quentes tradicionais + Coca-Cola 250ml.", 19.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/524982639_1584351234.png", false, 162], ["2 Hot Dogs + Coca 600ml", "2 cachorros-quentes tradicionais + Coca-Cola 600ml.", 21.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/272655419_742541568.png", false, 163], ["Sanduba das Meninas + Guaraná 200ml", "Sanduba das Meninas + Guaraná 200ml.", 22.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/347318371_171973801.png", false, 164], ["4 Minis Hot Dogs + Coca 600ml", "4 minis cachorros-quentes + Coca-Cola 600ml.", 23.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1702540608_2071542411.jpg", false, 165], ["Combo Cachorros", "2 cachorros-quentes tradicionais + Guaraná 1 litro.", 23.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/909598098_1525255093.png", false, 166], ["Combo Solteir@", "1 pão árabe de calabresa + Guaraná 200ml.", 25.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/440632780_1490864070.jpg", false, 167], ["X-Bacon + Coca 600ml", "1 X-Bacon + Coca-Cola 600ml.", 25.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/165082915_1226061849.jpg", false, 168], ["Pão Árabe Mix + Guaraná 200ml", "1 pão árabe mix + Guaraná 200ml.", 27.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/642741702_979168742.png", false, 169], ["2 Mistos + Coca Lata", "2 sandubas mistoburguer + Coca-Cola lata 350ml.", 27.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1056818668_1270470434.jpg", false, 170], ["Tudo Que Tenho Direito + Coca 250ml", "Sanduba Tudo Que Tenho Direito + Coca-Cola 250ml.", 27.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1781291203_769626042.jpg", false, 171], ["2 Mistos + Coca 250ml", "2 sandubas mistoburguer + Coca-Cola 250ml.", 28.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1031545322_1342648595.jpg", false, 172], ["2 Mistos + Coca 600ml", "2 sandubas mistoburguer + Coca-Cola 600ml.", 29.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/121784699_56276823.png", false, 173], ["2 Mistos + Guaraná 1L", "2 sandubas mistoburguer + Guaraná 1 litro.", 30.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1045446827_8729495.jpg", false, 174], ["4 Hot Dogs + Guaraná 200ml", "4 cachorros-quentes tradicionais + Guaraná 200ml.", 30.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/616067082_1835644278.jpg", false, 175], ["Árabe Completão + Guaraná 200ml", "1 pão árabe completão + Guaraná 200ml.", 30.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1352461761_1009972524.jpg", false, 176], ["2 Mistos + Guaraná 600ml", "2 sandubas mistoburguer + Guaraná 600ml.", 31.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/487847030_805493802.jpg", false, 177], ["4 Hot Dogs + Coca 250ml", "4 cachorros-quentes tradicionais + Coca-Cola 250ml.", 31.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1708120598_1924549379.jpg", false, 178], ["Árabe Completão + Coca 250ml", "1 pão árabe completão + Coca-Cola 250ml.", 31.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1028336382_807670281.png", false, 179], ["4 Hot Dogs + Guaraná Lata", "4 cachorros-quentes tradicionais + Guaraná lata 350ml.", 32.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/225704018_1258182085.jpg", false, 180], ["4 Hot Dogs + Coca 600ml", "4 cachorros-quentes tradicionais + Coca-Cola 600ml.", 33.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/509040156_1143421464.jpg", false, 181], ["4 Hot Dogs + Guaraná 1L", "4 cachorros-quentes tradicionais + Guaraná 1 litro.", 35.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1967499879_1032019619.jpg", false, 182], ["Árabe Especial + Coca 250ml", "Árabe Especial das Meninas + Coca-Cola 250ml.", 35.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/255297160_1884261207.jpg", false, 183], ["3 Mistos + Coca 250ml", "3 sandubas mistoburguer + Coca-Cola 250ml.", 40.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1088917512_439502317.jpg", false, 184], ["2 Mistos com Calabresa + Guaraná 1L", "2 mistoburgueres com calabresa + Guaraná 1 litro.", 41.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1782439779_796865176.jpg", false, 185], ["Combo Criançada", "5 cachorros-quentes tradicionais + Guaraná 1 litro.", 41.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1367804404_1044003364.png", false, 186], ["Combo X-Bacon", "2 X-Bacon + refrigerante 1 litro.", 45.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1868935581_1644901220.jpg", false, 187], ["Combo Adolescente", "6 cachorros-quentes tradicionais + Guaraná 1 litro.", 48.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/936811947_1019117104.jpg", false, 188], ["4 Mistos + Coca Lata", "4 sandubas mistoburguer + Coca-Cola lata 350ml.", 50.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1561781255_1197628616.jpg", false, 189], ["4 Mistos + Guaraná 1L", "4 sandubas mistoburguer + Guaraná 1 litro.", 53.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/254569589_1712413794.jpg", false, 190], ["Combo Árabes", "2 pães árabes mix + Guaraná 1 litro.", 56.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/550494487_1759354970.jpg", false, 191], ["10 Hot Dogs + Guaraná 200ml", "10 cachorros-quentes tradicionais + Guaraná 200ml.", 74.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/530391988_312775924.jpg", false, 192], ["Combo Apaixonad@s por Hot Dog", "10 cachorros-quentes tradicionais + Guaraná 1 litro.", 74.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1853198961_2105744330.jpg", false, 193], ["Combo Xonad@s por Hot e Coca", "10 cachorros-quentes tradicionais + Coca-Cola 1 litro.", 75.99, "Lanche + Refri", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1323447183_1299493196.jpg", false, 194], ["Água Mineral 500ml", "", 3.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/595653060_964773340.jpg", false, 195], ["Água com Gás 500ml", "", 4.8, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1917878058_1102363176.jpg", false, 196], ["Guaraná Antarctica 200ml", "", 5.1, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1003703188_1182996216.jpg", false, 197], ["Fanta Laranja 250ml", "", 5.59, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1895508696_1587325679.jpg", false, 198], ["Coca-Cola 250ml", "", 5.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1586145186_2001772320.jpg", false, 199], ["Coca-Cola Lata 350ml", "", 6.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1917270037_639142135.jpg", false, 200], ["Guaraná Lata 350ml", "", 6.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1744383895_267508395.jpg", false, 201], ["Coca-Cola 600ml", "", 7.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/194889609_582972869.jpg", false, 202], ["Guaraná 600ml", "", 7.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/370127214_221797092.jpg", false, 203], ["Del Valle Frutas Cítricas 450ml", "", 7.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/794502313_912599405.jpg", false, 204], ["Coca-Cola 600ml Sem Açúcar", "", 8.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1501192783_1520254338.jpg", false, 205], ["Guaraná Antarctica 1L", "", 10.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/205365_931464425.jpg", false, 206], ["Coca-Cola 1L", "", 11.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/201987907_549583292.jpg", false, 207], ["Coca-Cola 2L", "", 18.99, "Bebidas", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1142187300_1560872584.jpg", false, 208], ["Marujinho Açaí", "", 2.5, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/335995188_445979852.jpg", false, 209], ["Marujinho Cajá", "", 2.5, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/882184320_1883590039.jpg", false, 210], ["Marujinho Chocolate", "", 2.5, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/1751436419_1448408008.jpg", false, 211], ["Marujinho Leite Condensado", "", 2.5, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/184739001_507002917.jpg", false, 212], ["Marujinho Morango", "", 2.5, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/2010982709_138634855.jpg", false, 213], ["Sonho de Valsa", "", 2.5, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/93407436_827759106.jpg", false, 214], ["Doce de Goiaba Julieta 250g", "", 6.99, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/53721604_1919338084.jpg", false, 215], ["Nutella 140g", "", 14.99, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/221041403_1138862431.jpg", false, 216], ["Bom da Festa Brigadeiro", "", 15.99, "Doces", "", 0, "", false, "https://maisdeliveryfranquia.com.br/api/imagens/produtos/523766026_2060229785.jpg", false, 217]];   // [nome, descrição, preço, categoria, turnos, qtd_prot, sabores, conta_limite, foto, destaque, ordem]
+  const sh = aba_('Produtos'), n = sh.getLastRow();
+  if (n >= 2) sh.getRange(2, 1, n - 1, ABAS.Produtos.length).clearContent();
+  sh.getRange(2, 1, prod.length, ABAS.Produtos.length).setValues(prod.map(function (x) {
+    return [novoId_(), x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], true, false, x[9], x[10], '', '', false, ''];
+  }));
+  const p = props_(), cfg = JSON.parse(p.getProperty('config') || '{}');
+  cfg.categorias = ["Promoções", "Combos", "Cachorro-Quente", "Sandubas", "Pão Árabe", "Lanche + Refri", "Bebidas", "Doces"];
+  cfg.entrega = cfg.entrega || {};
+  cfg.entrega.gratis_combo = { ativo: true, palavra: 'entrega grátis', ate: 8 };
+  p.setProperty('config', JSON.stringify(cfg));
+  limparCache_(); subirVersao_();
+  Logger.log('Pronto! ' + prod.length + ' produtos cadastrados.');
+}
     return { doPost, setup };
   })();
 
