@@ -736,6 +736,7 @@ function renderMenu() {
       }).join('')}</div></section>`).join('')
     : `<p class="vazio">Nenhum item neste turno ainda.</p>`;
   observarCats(); revelar(); filtrar();
+  if (typeof renderBanners === 'function') renderBanners();   // banners das promoções sempre junto com o cardápio
 }
 
 /* busca em tempo real */
@@ -1316,9 +1317,9 @@ if (MESA || URLP.has('local')) {
 /* ---------- Banners passando sozinhos ----------
    Montados a partir dos produtos da categoria "Promoções" que têm foto
    (a dona troca as promoções pelo painel e os banners mudam juntos). */
-var BAN = { sig: '' };
 function renderBanners() {
-  if (!D) return;
+  if (typeof D === 'undefined' || !D || !$('#trilho')) return;
+  const BAN = window.__BAN || (window.__BAN = { sig: '' });
   const ps = D.produtos.filter(p => p.categoria === 'Promoções' && p.foto && !p.esgotado);
   const sig = ps.map(p => p.id).join(',');
   $('.banners').hidden = !ps.length;
