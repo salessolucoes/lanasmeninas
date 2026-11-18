@@ -183,7 +183,71 @@
   }
   function pilula(c, x, y, w, h, cor) { c.fillStyle = cor; if (c.roundRect) { c.beginPath(); c.roundRect(x, y, w, h, h / 2); c.fill(); } else c.fillRect(x, y, w, h); }
   /* opts: { formato: 'story'|'feed', turno, proteinas:[nomes], precos:[{nome,preco}], acomp, foto, slogan, link, data:Date } */
+  /* Arte da lanchonete (Lá Nas Meninas): sem "pratos do dia" — mostra as artes das promoções
+     num mural, com a logo, título, data e o link do cardápio. Cores da marca: preto ameixa + rosa. */
+  async function desenharArtePromos(canvas, opts) {
+    await carregarFontes();
+    const story = opts.formato !== 'feed';
+    const W = 1080, H = story ? 1920 : 1350;
+    canvas.width = W; canvas.height = H;
+    const c = canvas.getContext('2d');
+    const ROSA = '#ff2d8a', NOITE = '#120a10', OURO = '#ffcf4a', BRANCO = '#fff6fa';
+    const [logo, ...artes] = await Promise.all([carregarLogo()].concat(opts.artes.map(a => carregarImg(a.foto))));
+    // fundo escuro com brilho rosa
+    c.fillStyle = NOITE; c.fillRect(0, 0, W, H);
+    const gl = c.createRadialGradient(W / 2, -120, 40, W / 2, -120, H * 0.75);
+    gl.addColorStop(0, 'rgba(255,45,138,.55)'); gl.addColorStop(1, 'rgba(255,45,138,0)');
+    c.fillStyle = gl; c.fillRect(0, 0, W, H);
+    c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    // logo redonda
+    const lw = story ? 250 : 190, ly = story ? 70 : 40;
+    if (logo) {
+      c.save(); c.beginPath(); c.arc(W / 2, ly + lw / 2, lw / 2 + 8, 0, 7); c.fillStyle = ROSA; c.fill();
+      c.beginPath(); c.arc(W / 2, ly + lw / 2, lw / 2, 0, 7); c.clip(); c.drawImage(logo, (W - lw) / 2, ly, lw, lw); c.restore();
+    }
+    let y = ly + lw + (story ? 120 : 90);
+    let ft = story ? 104 : 84; const tt = (opts.titulo || 'PROMOÇÕES DE HOJE').toUpperCase();
+    do { c.font = `700 ${ft}px Oswald,sans-serif`; ft -= 2; } while (c.measureText(tt).width > 960 && ft > 40);
+    c.fillStyle = BRANCO;
+    c.shadowColor = 'rgba(255,45,138,.6)'; c.shadowBlur = 30; c.fillText((opts.titulo || 'PROMOÇÕES DE HOJE').toUpperCase(), W / 2, y); c.shadowBlur = 0;
+    y += story ? 30 : 22;
+    const d = opts.data || new Date(), dt = dataExtenso(d), dts = dt.charAt(0).toUpperCase() + dt.slice(1);
+    c.font = `700 ${story ? 40 : 34}px Montserrat,sans-serif`;
+    const dw = c.measureText(dts).width + 64, dh = story ? 68 : 58;
+    pilula(c, (W - dw) / 2, y, dw, dh, OURO); c.fillStyle = NOITE; c.fillText(dts, W / 2, y + dh * 0.69);
+    y += dh + (story ? 60 : 36);
+    // mural das artes (story: 3x2 · feed: 3x1)
+    const lista = artes.filter(Boolean).slice(0, story ? 6 : 3);
+    const cols = 3, rows = Math.max(1, Math.ceil(lista.length / cols)), gap = story ? 22 : 18, margem = 50;
+    const rodape = story ? 250 : 170;
+    const areaH = H - rodape - y, cw = (W - margem * 2 - gap * (cols - 1)) / cols;
+    const ch = Math.min(cw * 1.5, (areaH - gap * (rows - 1)) / rows), cwr = ch / 1.5;
+    const totalW = cwr * Math.min(cols, lista.length) + gap * (Math.min(cols, lista.length) - 1);
+    y += Math.max(0, (areaH - (ch * rows + gap * (rows - 1))) / 2);   // centraliza o mural na área livre
+    lista.forEach((im, i) => {
+      const r = Math.floor(i / cols), k = i % cols, nLinha = Math.min(cols, lista.length - r * cols);
+      const lw2 = cwr * nLinha + gap * (nLinha - 1);
+      const x = (W - lw2) / 2 + k * (cwr + gap), yy = y + r * (ch + gap);
+      c.save(); c.beginPath();
+      if (c.roundRect) c.roundRect(x, yy, cwr, ch, 26); else c.rect(x, yy, cwr, ch);
+      c.clip(); c.fillStyle = '#000'; c.fillRect(x, yy, cwr, ch); cobrir(c, im, x, yy, cwr, ch); c.restore();
+      c.lineWidth = 4; c.strokeStyle = 'rgba(255,45,138,.75)';
+      c.beginPath(); if (c.roundRect) c.roundRect(x, yy, cwr, ch, 26); else c.rect(x, yy, cwr, ch); c.stroke();
+    });
+    void totalW;
+    // rodapé
+    c.fillStyle = BRANCO; c.font = `600 ${story ? 64 : 52}px Caveat,cursive`;
+    c.fillText(opts.slogan || '', W / 2, H - (story ? 140 : 96));
+    if (opts.link) {
+      const t = 'Peça pelo link: ' + opts.link.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      c.font = `700 ${story ? 32 : 28}px Montserrat,sans-serif`;
+      const tw = c.measureText(t).width + 56, th = story ? 62 : 54, ty = H - (story ? 108 : 78);
+      pilula(c, (W - tw) / 2, ty, tw, th, ROSA); c.fillStyle = '#fff'; c.fillText(t, W / 2, ty + th * 0.68);
+    }
+    return canvas;
+  }
   async function desenharArte(canvas, opts) {
+    if (!(opts.proteinas || []).length && (opts.artes || []).length) return desenharArtePromos(canvas, opts);
     await carregarFontes();
     const [logo, foto] = await Promise.all([carregarLogo(), carregarImg(opts.foto)]);
     const story = opts.formato !== 'feed';

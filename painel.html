@@ -317,7 +317,6 @@ table.tab{width:100%;border-collapse:collapse;font-size:13.5px}
     <a href="#hoje" data-ir="hoje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M12 3v3M5 6l1.5 1.5M19 6l-1.5 1.5M9 13h6"/></svg>Hoje</a>
     <a href="#produtos" data-ir="produtos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>Produtos</a>
     <a href="#financeiro" data-ir="financeiro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Financeiro</a>
-    <a href="#divulgar" data-ir="divulgar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Divulgar</a>
     <a href="#ajustes" data-ir="ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ajustes</a>
     <button class="sair" id="btnSair">Sair do painel</button>
   </nav>
@@ -393,7 +392,7 @@ table.tab{width:100%;border-collapse:collapse;font-size:13.5px}
         </span>
         <span class="esp"></span>
         <button class="btn btn-l btn-pq" id="btnCSV">Baixar planilha</button>
-        <button class="btn btn-l btn-pq" id="btnTravarFin" title="Fechar a área do dono">Bloquear</button>
+        <button class="btn btn-l btn-pq" id="btnTravarFin" title="Fechar a área do dono" hidden>Bloquear</button>
       </div>
       <div class="kpis" id="kpis"></div>
       <div class="fin-grade">
@@ -523,9 +522,9 @@ table.tab{width:100%;border-collapse:collapse;font-size:13.5px}
 
 <iframe id="impressao" title="Impressão" style="position:absolute;width:0;height:0;border:0" aria-hidden="true"></iframe>
 
-<script src="config.js?v=7"></script>
-<script>if (!/^https?:\/\//.test(APP.API_URL || '')) document.write('<script src="demo.js?v=7"><\/script>');</script>
-<script src="base.js?v=7"></script>
+<script src="config.js?v=9"></script>
+<script>if (!/^https?:\/\//.test(APP.API_URL || '')) document.write('<script src="demo.js?v=9"><\/script>');</script>
+<script src="base.js?v=9"></script>
 <script>
 const { $, $$, brl, esc, norm, digitos, numBR, ls, rpc, min, TURNOS, nomeTurno, turnoAtivo, toast } = B;
 const L = APP.LOJA;
@@ -595,7 +594,8 @@ async function iniciar() {
   $('#login').hidden = true; $('#app').hidden = false;
   diaVisto = D.hoje; $('#diaPedidos').value = diaVisto;
   await carregarPedidos(true);
-  irPara(location.hash.slice(1) || 'pedidos');
+  await liberarDono();   // Financeiro sem senha extra: usa a própria senha do painel
+  irPara((location.hash.slice(1) || 'pedidos').replace('divulgar', 'pedidos'));
   sync();
   $('#btnNotif').hidden = !('Notification' in window) || Notification.permission !== 'default';
 }
@@ -1146,8 +1146,13 @@ async function salvarCfgParcial(p, okMsg) {
   return r;
 }
 function montarMsg(c, prots, precos, acomp) {
-  const ini = `${nomeTurno(c, arteTurno)} de hoje no ${D.nome}:`, fim = '';
   const link = linkCardapio();
+  if (!prots.length) {   // lanchonete: mensagem com as promoções
+    const ps = D.produtos.filter(p => p.ativo && !p.esgotado && p.categoria === 'Promoções').slice(0, 8);
+    return [`🔥 Promoções de hoje na ${D.nome}:`, ps.map(p => `• ${p.nome} — ${brl(p.preco)}`).join('\n'),
+      link ? '👉 Peça pelo link: ' + link : ''].filter(Boolean).join('\n\n');
+  }
+  const ini = `${nomeTurno(c, arteTurno)} de hoje no ${D.nome}:`, fim = '';
   return [ini, prots.map(n => '• ' + n).join('\n') || '• (marque as proteínas em Hoje)',
     acomp ? 'Acompanha: ' + acomp : '', precos.map(p => p.nome + ' ' + brl(p.preco)).join(' | '),
     fim, link ? 'Peça pelo link: ' + link : ''].filter(Boolean).join('\n\n').replace(/\n\n•/, '\n•');
@@ -1165,7 +1170,10 @@ async function renderDivulgar() {
   if (document.activeElement !== $('#arteFrase')) $('#arteFrase').value = c.slogan || '';
   msgTexto = montarMsg(c, prots, precos, acomp);
   $('#linkCard').value = linkCardapio() || 'Coloque o link do site em Ajustes';
-  await B.desenharArte(cv, { formato: arteFmt, turno: nomeTurno(c, arteTurno), proteinas: prots, precos, acomp, foto: 'img/arte-foto.jpg', slogan: c.slogan, link: linkCardapio(), data: B.agoraLoja() });
+  // lanchonete: a arte mostra as promoções (artes com foto do próprio site; destaques primeiro)
+  const artes = D.produtos.filter(p => p.ativo && !p.esgotado && p.categoria === 'Promoções' && /^img\//.test(p.foto || ''))
+    .sort((a, b) => (b.destaque ? 1 : 0) - (a.destaque ? 1 : 0));
+  await B.desenharArte(cv, { formato: arteFmt, turno: nomeTurno(c, arteTurno), proteinas: prots, precos, acomp, artes, titulo: 'Promoções de hoje', foto: 'img/arte-foto.jpg', slogan: c.slogan, link: linkCardapio(), data: B.agoraLoja() });
   arteBlob = await B.canvasParaBlob(cv);
   $('#arteImg').src = URL.createObjectURL(arteBlob);
 }
@@ -1277,12 +1285,12 @@ function renderAjustes() {
       </form>
     </div>
     <div class="cartao"><h2>Senhas</h2>
-      <p style="font-size:12.5px;color:var(--cinza)">A <b>senha do painel</b> é a dos funcionários. A <b>senha do dono</b> abre o Financeiro e é pedida para trocar qualquer senha.</p>
-      ${D.tem_senha_dono ? `<label class="rot">Senha atual do dono<input class="campo" id="sDono" type="password" inputmode="numeric" maxlength="20" autocomplete="off"></label>` : '<p style="font-size:13px;color:var(--brasa);font-weight:600;margin-top:8px">Primeiro crie a senha do dono abrindo o Financeiro.</p>'}
-      <form id="formSenha" style="margin-top:12px"><strong style="font-size:14px">Senha do painel (funcionários)</strong><div class="duas"><label class="rot">Nova senha<input class="campo" id="sNova" type="password" inputmode="numeric" minlength="6" maxlength="20" autocomplete="new-password" required></label>
+      <p style="font-size:12.5px;color:var(--cinza)">Uma senha só para entrar no painel (inclusive no Financeiro).</p>
+      ${false ? `<label class="rot">Senha atual do dono<input class="campo" id="sDono" type="password" inputmode="numeric" maxlength="20" autocomplete="off"></label>` : '<p style="font-size:13px;color:var(--brasa);font-weight:600;margin-top:8px">Primeiro crie a senha do dono abrindo o Financeiro.</p>'}
+      <form id="formSenha" style="margin-top:12px"><strong style="font-size:14px">Trocar a senha do painel</strong><div class="duas"><label class="rot">Nova senha<input class="campo" id="sNova" type="password" inputmode="numeric" minlength="6" maxlength="20" autocomplete="new-password" required></label>
       <label class="rot">Repita a senha<input class="campo" id="sRep" type="password" inputmode="numeric" minlength="6" maxlength="20" autocomplete="new-password" required></label></div>
       <button class="btn btn-s" style="margin-top:12px">Trocar senha do painel</button></form>
-      <form id="formSenhaDono" style="margin-top:16px"><strong style="font-size:14px">Senha do dono</strong><div class="duas"><label class="rot">Nova senha<input class="campo" id="sdNova" type="password" inputmode="numeric" minlength="6" maxlength="20" autocomplete="new-password" required></label>
+      <form id="formSenhaDono" style="margin-top:16px" hidden><strong style="font-size:14px">Senha do dono</strong><div class="duas"><label class="rot">Nova senha<input class="campo" id="sdNova" type="password" inputmode="numeric" minlength="6" maxlength="20" autocomplete="new-password" required></label>
       <label class="rot">Repita a senha<input class="campo" id="sdRep" type="password" inputmode="numeric" minlength="6" maxlength="20" autocomplete="new-password" required></label></div>
       <button class="btn btn-s" style="margin-top:12px">Trocar senha do dono</button></form>
     </div>`;
@@ -1335,9 +1343,13 @@ async function trocarSenha(e) {
   const a = $('#sNova').value, b = $('#sRep').value;
   if (a.length < 6) return toast('A senha precisa ter pelo menos 6 dígitos', 'erro');
   if (a !== b) return toast('As senhas não são iguais', 'erro');
-  const pd = pinDonoAjustes(); if (!pd) return;
+  const pd = dono || sess.pin;
   const r = await chamar('admin_senha', { nova: a, pin_dono: pd });
-  if (r) { sess.pin = a; SS.set(sess); dono = pd; toast('Senha do painel trocada'); $('#sNova').value = ''; $('#sRep').value = ''; }
+  if (r) {
+    sess.pin = a; SS.set(sess);
+    dono = a;
+    toast('Senha trocada'); $('#sNova').value = ''; $('#sRep').value = '';
+  }
 }
 function pinDonoAjustes() {
   if (!D.tem_senha_dono) { toast('Primeiro crie a senha do dono abrindo o Financeiro.', 'erro'); return null; }
@@ -1358,13 +1370,29 @@ async function trocarSenhaDono(e) {
 
 /* ================= ÁREA DO DONO (financeiro) ================= */
 let dono = null;   // senha do dono: fica só na memória; recarregou ou saiu, pede de novo
+/* Lá Nas Meninas: o Financeiro abre direto, sem "senha do dono".
+   A senha do dono passa a ser a MESMA do painel (criada/conferida automaticamente).
+   Se alguém já tiver criado uma senha do dono diferente, aí o sistema pede ela uma vez. */
+async function liberarDono() {
+  if (dono || !sess || !sess.pin) return;
+  try {
+    if (!D.tem_senha_dono) {
+      const r = await api('admin_senha_dono_criar', { nova: sess.pin });
+      if (r && r.ok !== false) { D.tem_senha_dono = true; dono = sess.pin; }
+    } else {
+      const r = await api('admin_dono_ok', { pin_dono: sess.pin });
+      if (r && r.ok !== false) dono = sess.pin;
+    }
+  } catch (e) {}
+}
 async function chamarDono(fn, args, okMsg) {
   if (!dono) { abrirFin(); return null; }
   const r = await chamar(fn, Object.assign({}, args, { pin_dono: dono }), okMsg);
   if (!r && viewAtual === 'financeiro') { /* senha errada ou mudou */ }
   return r;
 }
-function abrirFin() {
+async function abrirFin() {
+  if (!dono) await liberarDono();
   const travado = !dono;
   $('#finTrava').hidden = !travado; $('#finConteudo').hidden = travado;
   if (!travado) { carregarFin(); return; }

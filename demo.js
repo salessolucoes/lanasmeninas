@@ -376,6 +376,9 @@ const ADMIN = {
   admin_pedido_manual: function (b) { return comTrava_(function () { return criarPedido_(b.p || {}, true); }); }
 };
 
+// Lá Nas Meninas: sem "senha do dono" — quem entra no painel (senha do painel) já vê o Financeiro.
+const FINANCEIRO_SEM_SENHA_EXTRA = true;
+
 function executar_(b) {
   try {
     const acao = String(b.acao || '');
@@ -387,7 +390,9 @@ function executar_(b) {
         cc.put('pin_falhas', String(falhas + 1), 600);   // trava por 10 min depois de 10 erros
         return { ok: false, erro: 'PIN inválido' };
       }
-      if (DONO[acao] || (acao === 'admin_excluir' && b.p_tipo === 'despesa')) {
+      if ((DONO[acao] || (acao === 'admin_excluir' && b.p_tipo === 'despesa')) && FINANCEIRO_SEM_SENHA_EXTRA) {
+        if (DONO[acao]) return DONO[acao](b);
+      } else if (DONO[acao] || (acao === 'admin_excluir' && b.p_tipo === 'despesa')) {
         const pd = props_().getProperty('pin_dono');
         if (!pd) return { ok: false, erro: 'SEM_SENHA_DONO' };
         if (String(b.pin_dono || '') !== pd) { cc.put('pin_falhas', String(falhas + 1), 600); return { ok: false, erro: 'Senha do dono inválida' }; }
@@ -670,7 +675,7 @@ function cabecalhos_() {   // garante o nome das colunas novas nas abas que já 
 function adminDados_() {
   if (props_().getProperty('cab_v') !== '5') { cabecalhos_(); props_().setProperty('cab_v', '5'); }
   const cfg = config_(), h = hoje_(cfg);
-  return { ok: true, nome: nome_(), config: cfg, tem_senha_dono: !!props_().getProperty('pin_dono'), hoje: h.dia, agora: h.iso, turno_atual: turnoEm_(cfg, h.hm),
+  return { ok: true, nome: nome_(), config: cfg, tem_senha_dono: FINANCEIRO_SEM_SENHA_EXTRA || !!props_().getProperty('pin_dono'), hoje: h.dia, agora: h.iso, turno_atual: turnoEm_(cfg, h.hm),
     vendidos: vendidos_(h.dia),
     produtos: ler_('Produtos').map(prod_).sort(porOrdem_),
     proteinas: ler_('Proteinas').map(prot_).sort(porOrdem_),
