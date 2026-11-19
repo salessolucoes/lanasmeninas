@@ -289,6 +289,10 @@ table.tab{width:100%;border-collapse:collapse;font-size:13.5px}
 #toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-20px);z-index:99;background:var(--carvao);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;font-size:14px;opacity:0;pointer-events:none;transition:.25s;max-width:92vw;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 #toast.erro{background:var(--brasa)}
+.ordem-bt{display:inline-flex;gap:4px;margin-right:4px}
+.ordem-bt .btn{min-width:34px;padding-left:8px;padding-right:8px}
+.ordem-bt .btn:disabled{opacity:.35}
+.ordem-bt .pos{min-width:42px;font-weight:800}
 </style>
 </head>
 <body>
@@ -910,18 +914,49 @@ function textoTurnos(p) { return !p.turnos || !p.turnos.length || p.turnos.lengt
 function renderProdutos() {
   const q = norm($('#buscaProd').value);
   const html = ordemCats().map(c => {
-    const ps = D.produtos.filter(p => p.categoria === c && (!q || norm(p.nome).includes(q)));
+    const todos = D.produtos.filter(p => p.categoria === c).sort(porOrdem);
+    const ps = todos.filter(p => !q || norm(p.nome).includes(q));
     if (!ps.length) return '';
     return `<h2 class="cat-tit">${esc(c)}</h2>` + ps.map(p => `<div class="prod ${p.ativo ? '' : 'off'}">
       ${p.foto ? `<img class="ft" src="${esc(p.foto)}" alt="" loading="lazy">` : `<span class="ft">${esc(p.nome.charAt(0))}</span>`}
       <div class="c"><strong>${esc(p.nome)}</strong><small>${brl(p.preco)}${Number(p.preco_noite) > 0 ? ' (noite ' + brl(p.preco_noite) + ')' : ''} · ${textoTurnos(p)}${p.qtd_proteinas ? ` · escolhe ${p.qtd_proteinas > 1 ? 'até ' + p.qtd_proteinas + ' proteínas' : '1 proteína'}` : ''}${p.esgotado ? ' · <b style="color:var(--brasa)">esgotado</b>' : ''}</small></div>
       <div class="acoes">
+        <span class="ordem-bt" role="group" aria-label="Posição de ${esc(p.nome)}">
+          <button class="btn btn-l btn-pq" data-mover="${p.id}" data-dir="-1" title="Subir" ${todos.indexOf(p) === 0 ? 'disabled' : ''}>▲</button>
+          <button class="btn btn-l btn-pq pos" data-posicao="${p.id}" title="Escolher a posição">${todos.indexOf(p) + 1}º</button>
+          <button class="btn btn-l btn-pq" data-mover="${p.id}" data-dir="1" title="Descer" ${todos.indexOf(p) === todos.length - 1 ? 'disabled' : ''}>▼</button>
+        </span>
         <button class="btn btn-pq ${p.esgotado ? 'btn-s' : 'btn-l'}" data-prflag="${p.id}" data-campo="esgotado" data-v="${p.esgotado ? 0 : 1}">${p.esgotado ? 'Voltou' : 'Esgotou'}</button>
         <label class="sw" title="Mostrar no cardápio"><input type="checkbox" data-prflag="${p.id}" data-campo="ativo" ${p.ativo ? 'checked' : ''} aria-label="Mostrar ${esc(p.nome)} no cardápio"><span></span></label>
         <button class="btn btn-l btn-pq" data-editar="${p.id}">Editar</button>
       </div></div>`).join('');
   }).join('');
   $('#listaProd').innerHTML = html || '<p class="vazio">Nenhum produto encontrado.</p>';
+}
+/* ---------- ordem dos produtos dentro da categoria (▲ ▼ e posição) ---------- */
+function porOrdem(a, b) { return ((Number(a.ordem) || 0) - (Number(b.ordem) || 0)) || String(a.nome).localeCompare(String(b.nome)); }
+let movendo = false;
+async function reordenar(id, novoIdx) {
+  if (movendo) return;
+  const p = D.produtos.find(x => x.id === id); if (!p) return;
+  const lista = D.produtos.filter(x => x.categoria === p.categoria).sort(porOrdem);
+  const i = lista.indexOf(p); novoIdx = Math.max(0, Math.min(lista.length - 1, novoIdx));
+  if (i === novoIdx) return;
+  lista.splice(i, 1); lista.splice(novoIdx, 0, p);
+  const base = Math.max(1, Math.min.apply(null, lista.map(x => Number(x.ordem) || 1)));
+  const mudou = [];
+  lista.forEach((x, k) => { if ((Number(x.ordem) || 0) !== base + k) { x.ordem = base + k; mudou.push(x); } });
+  renderProdutos();
+  movendo = true;
+  try {
+    for (let k = 0; k < mudou.length; k++) {
+      if (mudou.length > 2) toast(`Salvando ordem… ${k + 1}/${mudou.length}`);
+      const r = await api('admin_produto', { p_loja: L, p: Object.assign({}, mudou[k]) });
+      if (!r || r.ok === false) { toast('Não foi possível salvar a ordem. Tente de novo.', 'erro'); return; }
+    }
+    toast('Ordem salva ✓');
+  } catch (e) { toast('Sem conexão. Tente de novo.', 'erro'); }
+  finally { movendo = false; }
 }
 async function flagProduto(id, campo, v) {
   const p = D.produtos.find(x => x.id === id); if (!p) return;
@@ -1428,6 +1463,13 @@ $('#btnTravarFin').onclick = () => { dono = null; abrirFin(); toast('Área do do
 document.addEventListener('click', async e => {
   if (e.target.classList.contains('modal')) { e.target.hidden = true; return; }
   const b = e.target.closest('button,a'); if (!b) return;
+  if (b.dataset.mover) { const p = D.produtos.find(x => x.id === b.dataset.mover); const lista = D.produtos.filter(x => x.categoria === p.categoria).sort(porOrdem); return reordenar(p.id, lista.indexOf(p) + Number(b.dataset.dir)); }
+  if (b.dataset.posicao) {
+    const p = D.produtos.find(x => x.id === b.dataset.posicao); const n = D.produtos.filter(x => x.categoria === p.categoria).length;
+    const v = prompt(`Em que posição "${p.nome}" deve ficar em ${p.categoria}? (1 a ${n})`);
+    const k = parseInt(v, 10); if (k >= 1 && k <= n) reordenar(p.id, k - 1);
+    return;
+  }
   const d = b.dataset;
   if (d.ir) { e.preventDefault(); irPara(d.ir); }
   else if (d.st) { B.destravarSom(); mudarStatus(+d.pid, d.st); }
