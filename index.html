@@ -386,6 +386,24 @@ body{background-image:none}
 .item-ingred p{font-size:15px;line-height:1.55;color:var(--texto)}
 .item .add-txt{white-space:nowrap}
 </style>
+<script>
+/* Atualização automática: quando sair versão nova no GitHub, o celular recarrega sozinho
+   (o GitHub deixa a página guardada no celular por até 10 min). A cada atualização,
+   mude SITE_VERSAO aqui e o conteúdo de versao.txt para o mesmo valor. */
+(function () {
+  var SITE_VERSAO = '2026-11-23a';
+  function checar() {
+    fetch('versao.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
+      v = (v || '').trim();
+      if (!v || v === SITE_VERSAO) return;
+      try { if (sessionStorage.getItem('recarregou') === v) return; sessionStorage.setItem('recarregou', v); } catch (e) {}
+      var u = new URL(location.href); u.searchParams.set('v', v); location.replace(u.toString());
+    }).catch(function () {});
+  }
+  checar();
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) checar(); });
+})();
+</script>
 </head>
 <body>
 
