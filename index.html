@@ -374,6 +374,17 @@ body{background-image:none}
 .item.promo .selo-i{display:none}
 .pontos .contador{font-size:12px;font-weight:800;color:var(--suave);background:var(--noite-2);border:1px solid var(--borda);padding:4px 11px;border-radius:999px}
 .pontos .contador b{color:#fff}
+.aviso-zap{font-size:13.5px;line-height:1.45;color:#d9ffe9;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.35);padding:10px 12px;border-radius:12px}
+.item-foto-wrap{position:relative;margin:-14px -20px 14px;background:#000;border-radius:28px 28px 0 0;overflow:hidden}
+.item-foto-wrap img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover}
+.item-foto-wrap img.arte{aspect-ratio:auto;max-height:62vh;object-fit:contain}
+.item-foto-wrap .fechar{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.6);color:#fff}
+@media(min-width:720px){.item-foto-wrap{border-radius:28px 28px 0 0}}
+.item-preco-g{margin-top:4px;font:800 22px var(--t-display);color:var(--rosa-3)}
+.item-ingred{margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--noite);border:1px solid var(--borda)}
+.item-ingred h3{font:800 13px var(--t-corpo);letter-spacing:.6px;text-transform:uppercase;color:var(--suave);margin-bottom:6px}
+.item-ingred p{font-size:15px;line-height:1.55;color:var(--texto)}
+.item .add-txt{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -435,7 +446,9 @@ body{background-image:none}
 <!-- escolher opções do item -->
 <div class="modal" id="mItem" hidden>
   <div class="folha" role="dialog" aria-modal="true" aria-labelledby="itemNome">
-    <div class="folha-topo"><div><h2 id="itemNome"></h2><p class="sub" id="itemDesc"></p></div><button class="fechar" data-fechar aria-label="Fechar">×</button></div>
+    <div class="item-foto-wrap" id="itemFotoWrap" hidden><img id="itemFoto" alt=""><button class="fechar" data-fechar aria-label="Fechar">×</button></div>
+    <div class="folha-topo"><div><h2 id="itemNome"></h2><p class="item-preco-g" id="itemPreco"></p></div><button class="fechar" id="itemFecharTopo" data-fechar aria-label="Fechar">×</button></div>
+    <div class="item-ingred" id="itemIngredBox" hidden><h3>O que vem</h3><p id="itemDesc"></p></div>
     <div class="bloco" id="blocoProt" hidden><h3><span id="protTitulo">Escolha a proteína</span><small id="protConta"></small></h3><div class="escolhas" id="protLista"></div></div>
     <div class="bloco" id="blocoAcomp" hidden><h3>Acompanhamentos</h3><p class="sub" style="margin:-4px 0 8px">Toque para marcar os que você quer.</p><div class="opcoes" id="acompLista"></div></div>
     <div class="bloco" id="blocoSabor" hidden><h3 id="saborTitulo">Sabor</h3><div class="opcoes" id="saborLista"></div></div>
@@ -507,7 +520,8 @@ body{background-image:none}
       <a class="btn btn-zap btn-w" id="btnComprovante" target="_blank" rel="noopener">Enviar comprovante no WhatsApp</a>
     </div>
     <div style="display:grid;gap:10px;margin-top:20px">
-      <a class="btn btn-l btn-w" id="btnZapLoja" target="_blank" rel="noopener" hidden>Enviar pedido no WhatsApp</a>
+      <p class="aviso-zap" id="avisoZap">✅ <b>Pronto! Seu pedido já chegou na lanchonete.</b><br>Se puder, mande também pelo WhatsApp — assim a confirmação é mais rápida. 👇</p>
+      <a class="btn btn-zap btn-w" id="btnZapLoja" target="_blank" rel="noopener" hidden style="padding:15px;font-size:15.5px">📲 Enviar também pelo WhatsApp</a>
       <button class="btn btn-s btn-w" data-fechar>Voltar ao cardápio</button>
     </div>
   </div>
@@ -728,10 +742,10 @@ function renderMenu() {
             ${p.destaque ? '<span class="selo-i">🔥 Destaque</span>' : ''}
             ${acao ? `<div class="acao-f">${acao}</div>` : ''}
           </div>
-          <button class="item-c" ${pode && !ind ? `data-add="${p.id}"` : 'tabindex="-1"'}>
+          <button class="item-c" data-ver="${p.id}" aria-label="Ver o que vem em ${esc(p.nome)}">
             <div class="linha-preco"><h3>${esc(p.nome)}</h3></div>
             <div class="item-base"><p>${esc(p.descricao || '')}</p>
-              <div class="item-pe"><span class="item-preco">${brl(precoDe(p))}</span>${pode && !ind ? '<span class="add-txt">Adicionar</span>' : ''}</div></div>
+              <div class="item-pe"><span class="item-preco">${brl(precoDe(p))}</span><span class="add-txt">Ver detalhes</span></div></div>
           </button></article>`;
       }).join('')}</div></section>`).join('')
     : `<p class="vazio">Nenhum item neste turno ainda.</p>`;
@@ -816,15 +830,23 @@ function mudarSimples(id, d) {
 }
 
 /* ---------- escolher opções ---------- */
-function abrirItem(p) {
-  if (!podePedir(turno)) return;
-  if (!p.qtd_proteinas && !(p.sabores && p.sabores.length)) { if (addLinha(p)) toast(p.nome + ' adicionado'); return; }
+// detalhe = true: abre a tela do produto (foto grande + tudo o que vem). O "+" do card continua adicionando direto.
+function abrirItem(p, detalhe) {
+  if (!podePedir(turno) && !detalhe) return;
+  if (!detalhe && !p.qtd_proteinas && !(p.sabores && p.sabores.length)) { if (addLinha(p)) toast(p.nome + ' adicionado'); return; }
   const acs = temAcomp(p) && cfg().escolher_acomp !== false ? listaAcomp(turno) : [];
   itemAberto = p; itemEsc = { prot: {}, sabor: '', qtd: 1, acs, acomp: new Set() };
   $('#blocoAcomp').hidden = !acs.length;
   $('#acompLista').innerHTML = acs.map(a => `<button class="opcao" data-acomp="${esc(a)}" aria-pressed="false">${esc(a.charAt(0).toUpperCase() + a.slice(1))}</button>`).join('');
   $('#itemNome').textContent = p.nome;
-  $('#itemDesc').textContent = [p.descricao, temAcomp(p) && acompDo(turno) ? 'Acompanha: ' + acompDo(turno) : '', brl(precoDe(p))].filter(Boolean).join('. ');
+  const txt = [p.descricao, temAcomp(p) && acompDo(turno) ? 'Acompanha: ' + acompDo(turno) : ''].filter(Boolean).join(' ');
+  $('#itemDesc').textContent = txt; $('#itemIngredBox').hidden = !txt;
+  $('#itemPreco').textContent = brl(precoDe(p));
+  $('#itemFotoWrap').hidden = !p.foto; $('#itemFecharTopo').hidden = !!p.foto;
+  if (p.foto) { $('#itemFoto').src = p.foto; $('#itemFoto').className = p.categoria === 'Promoções' ? 'arte' : ''; }
+  const pode = podePedir(turno);
+  $('#btnAddItem').disabled = !pode; $('#itemObs').closest('label').hidden = !pode;
+  if (!pode) $('#itemErro').textContent = 'Fechado agora — dá para ver, mas os pedidos voltam quando abrir.';
   $('#blocoProt').hidden = !p.qtd_proteinas;
   $('#protTitulo').textContent = p.qtd_proteinas === 1 ? 'Escolha a proteína' : `Escolha até ${p.qtd_proteinas} proteínas`;
   $('#blocoSabor').hidden = !(p.sabores && p.sabores.length);
@@ -832,8 +854,8 @@ function abrirItem(p) {
   $('#saborLista').innerHTML = (p.sabores || []).map(s => (p.sabores_off || []).includes(s)
     ? `<span class="opcao" style="opacity:.45;text-decoration:line-through" title="Acabou hoje">${esc(s)}</span>`
     : `<button class="opcao" data-sabor="${esc(s)}" aria-pressed="false">${esc(s)}</button>`).join('');
-  $('#itemObs').value = ''; $('#itemErro').textContent = '';
-  renderEscolhas(); abrir('#mItem');
+  $('#itemObs').value = ''; if (pode) $('#itemErro').textContent = '';
+  renderEscolhas(); abrir('#mItem'); $('#mItem .folha').scrollTop = 0;
 }
 function renderEscolhas() {
   const p = itemAberto, n = p.qtd_proteinas, tot = Object.values(itemEsc.prot).reduce((a, b) => a + b, 0);
@@ -1216,6 +1238,7 @@ document.addEventListener('click', e => {
   if (d.turno) { turno = d.turno; turnoManual = Date.now(); renderTudo(); window.scrollTo({ top: 0 }); }
   else if (d.fotos) { const p = D.produtos.find(x => x.id === d.fotos); if (p) abrirFotos(p); }
   else if (d.add) { const p = D.produtos.find(x => x.id === d.add); if (p) abrirItem(p); }
+  else if (d.ver) { const p = D.produtos.find(x => x.id === d.ver); if (p) abrirItem(p, true); }
   else if (d.mais) mudarSimples(d.mais, 1);
   else if (d.menos) mudarSimples(d.menos, -1);
   else if (d.prot1) { itemEsc.prot = { [d.prot1]: 1 }; renderEscolhas(); irParaAcomp(); }
